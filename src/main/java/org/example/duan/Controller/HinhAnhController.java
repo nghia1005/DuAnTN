@@ -19,7 +19,8 @@ public class HinhAnhController {
     private final HinhAnhRepository hinhAnhRepository;
 
     // Đọc đường dẫn upload từ application.properties
-    private String uploadDir = "C:/DuAn-DuAn-Nghia (1)/DuAn-DuAn-Nghia/src/main/resources/static/images/";
+    @Value("${app.upload.dir:uploads/}")
+    private String uploadDir;
 
     public HinhAnhController(HinhAnhRepository hinhAnhRepository) {
         this.hinhAnhRepository = hinhAnhRepository;
@@ -33,25 +34,28 @@ public class HinhAnhController {
             return ResponseEntity.badRequest().body(response);
         }
         try {
-            String originalFileName = file.getOriginalFilename().replaceAll("[^a-zA-Z0-9.\\-_]", "_");
-            String fileName = UUID.randomUUID() + "_" + originalFileName;
+            // Ghép path an toàn
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             File uploadPath = new File(uploadDir);
             if (!uploadPath.exists()) uploadPath.mkdirs();
-            File dest = new File(uploadPath, fileName);
+            File dest = new File(uploadPath, fileName); // Sử dụng constructor này để tránh lỗi ghép chuỗi
+
             file.transferTo(dest);
-            // Lưu DB (chỉ lưu tên file)
+
+            // Lưu DB (chỉ lưu tên file hoặc đường dẫn tương đối)
             HinhAnh hinhAnh = new HinhAnh();
             hinhAnh.setTenHinhAnh(fileName);
-            hinhAnh.setUrlHinhAnh(fileName); // chỉ lưu tên file
+            hinhAnh.setUrlHinhAnh("uploads/" + fileName); // Lưu đường dẫn tương đối
             hinhAnh = hinhAnhRepository.save(hinhAnh);
+
             // Trả về URL truy cập ảnh
-            String fileUrl = "/images/" + fileName;
+            String fileUrl = "/hinh-anh/view/" + fileName;
             response.put("message", "Upload thành công!");
             response.put("fileName", fileName);
             response.put("fileUrl", fileUrl);
             response.put("idHinhAnh", hinhAnh.getIdHinhAnh());
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (Exception e) { // Bắt mọi lỗi
             e.printStackTrace();
             response.put("message", "Lỗi khi upload: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);

@@ -13,8 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
 
 @Component
@@ -74,8 +72,8 @@ public class DataInitializer implements CommandLineRunner {
                 voucher1.setGiaTriToiThieu(new BigDecimal("100000"));
                 voucher1.setGiaTriToiDa(new BigDecimal("50000"));
                 voucher1.setSoLuong(100);
-                voucher1.setNgayBatDau(LocalDateTime.now());
-                voucher1.setNgayKetThuc(LocalDateTime.now().plusDays(30)); // 30 ngày
+                voucher1.setNgayBatDau(new Date());
+                voucher1.setNgayKetThuc(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)); // 30 ngày
                 voucher1.setMoTa("Giảm giá 10% cho đơn hàng đầu tiên của khách hàng mới");
                 voucher1.setTrangThai("Hoạt động");
                 voucher1.setPhanTramGiamGia(new BigDecimal("10"));
@@ -89,8 +87,8 @@ public class DataInitializer implements CommandLineRunner {
                 voucher2.setGiaTriToiThieu(new BigDecimal("200000"));
                 voucher2.setGiaTriToiDa(new BigDecimal("50000"));
                 voucher2.setSoLuong(50);
-                voucher2.setNgayBatDau(LocalDateTime.now());
-                voucher2.setNgayKetThuc(LocalDateTime.now().plusDays(15)); // 15 ngày
+                voucher2.setNgayBatDau(new Date());
+                voucher2.setNgayKetThuc(new Date(System.currentTimeMillis() + 15L * 24 * 60 * 60 * 1000)); // 15 ngày
                 voucher2.setMoTa("Giảm trực tiếp 50,000đ cho đơn hàng từ 200,000đ");
                 voucher2.setTrangThai("Hoạt động");
                 voucher2.setPhanTramGiamGia(new BigDecimal("0"));
@@ -104,8 +102,8 @@ public class DataInitializer implements CommandLineRunner {
                 voucher3.setGiaTriToiThieu(new BigDecimal("300000"));
                 voucher3.setGiaTriToiDa(new BigDecimal("30000"));
                 voucher3.setSoLuong(200);
-                voucher3.setNgayBatDau(LocalDateTime.now());
-                voucher3.setNgayKetThuc(LocalDateTime.now().plusDays(7)); // 7 ngày
+                voucher3.setNgayBatDau(new Date());
+                voucher3.setNgayKetThuc(new Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000)); // 7 ngày
                 voucher3.setMoTa("Miễn phí vận chuyển cho đơn hàng từ 300,000đ");
                 voucher3.setTrangThai("Hoạt động");
                 voucher3.setPhanTramGiamGia(new BigDecimal("0"));

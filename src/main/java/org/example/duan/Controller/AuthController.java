@@ -9,6 +9,11 @@ import org.example.duan.Repository.NhanVienRepository;
 import org.example.duan.Repository.VaiTroRepository;
 import org.example.duan.Service.EmailService;
 
+import org.example.duan.Repository.TaiKhoanRepository;
+import org.example.duan.Repository.NhanVienRepository;
+import org.example.duan.Entity.NhanVien;
+import org.example.duan.Repository.VaiTroRepository;
+import org.example.duan.Entity.VaiTro;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +25,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -42,9 +46,6 @@ public class AuthController {
     @Autowired
     private KhachHangRepository khachHangRepository;
 
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<?>> login(@RequestBody TaiKhoan loginRequest) {
@@ -61,6 +62,7 @@ public class AuthController {
         
         // Chuẩn bị thông tin trả về
         String vaiTro = tk.getVaiTro() != null ? tk.getVaiTro().getTenVaiTro() : "";
+        Integer idVaiTro = tk.getVaiTro() != null ? tk.getVaiTro().getIdVaiTro() : null;
         String tenNhanVien = null;
         String tenKhachHang = null;
         NhanVien nv = nhanVienRepository.findByTaiKhoan(tk);
@@ -76,6 +78,7 @@ public class AuthController {
         Map<String, Object> userInfo = new java.util.HashMap<>();
         userInfo.put("tenTaiKhoan", tk.getTenTaiKhoan());
         userInfo.put("vaiTro", vaiTro);
+        userInfo.put("idVaiTro", idVaiTro);
         if (tenNhanVien != null) userInfo.put("tenNhanVien", tenNhanVien);
         if (tenKhachHang != null) userInfo.put("tenKhachHang", tenKhachHang);
         return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công!", userInfo));

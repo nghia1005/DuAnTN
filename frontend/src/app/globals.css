@@ -84,10 +84,10 @@ label {
 }
 
 /* Ghi đè mạnh màu dropdown tháng/năm react-datepicker */
-.react-datepicker__dropdown-menu, 
-.react-datepicker__month-dropdown, 
-.react-datepicker__year-dropdown, 
-.react-datepicker__month-option, 
+.react-datepicker__dropdown-menu,
+.react-datepicker__month-dropdown,
+.react-datepicker__year-dropdown,
+.react-datepicker__month-option,
 .react-datepicker__year-option {
   background: #fff !important;
   color: #222 !important;
@@ -325,16 +325,3 @@ textarea {
 .btn-save:hover {
   background: #a08a2a;
 }
-
-/* Custom hiển thị thứ trong tuần tiếng Việt cho MUI DatePicker */
-.MuiDayCalendar-weekDayLabel {
-  color: transparent !important;
-  position: relative;
-}
-.MuiDayCalendar-weekDayLabel:nth-child(1)::after { content: "T2"; color: #666; }
-.MuiDayCalendar-weekDayLabel:nth-child(2)::after { content: "T3"; color: #666; }
-.MuiDayCalendar-weekDayLabel:nth-child(3)::after { content: "T4"; color: #666; }
-.MuiDayCalendar-weekDayLabel:nth-child(4)::after { content: "T5"; color: #666; }
-.MuiDayCalendar-weekDayLabel:nth-child(5)::after { content: "T6"; color: #666; }
-.MuiDayCalendar-weekDayLabel:nth-child(6)::after { content: "T7"; color: #666; }
-.MuiDayCalendar-weekDayLabel:nth-child(7)::after { content: "CN"; color: #666; }

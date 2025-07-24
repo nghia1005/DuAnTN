@@ -57,7 +57,6 @@ export default function CustomerSelector({
     trangThai: 'Hoạt động'
   });
   const [creating, setCreating] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Load danh sách khách hàng
   useEffect(() => {
@@ -130,8 +129,6 @@ export default function CustomerSelector({
         onCustomerSelectAction(created);
         setShowCreateModal(false);
         setNewCustomer({ tenKhachHang: '', soDienThoai: '', email: '', gioiTinh: true, maKhachHang: '', trangThai: 'Hoạt động' });
-        setSuccessMessage('Tạo khách hàng thành công!');
-        setTimeout(() => setSuccessMessage(null), 2500);
       } else {
         alert('Tạo khách hàng thất bại!');
       }
@@ -229,6 +226,13 @@ export default function CustomerSelector({
                     const addressId = parseInt(e.target.value);
                     const address = selectedCustomer.danhSachDiaChi.find(addr => addr.idDiaChi === addressId);
                     onAddressSelectAction(address || null);
+                    // Nếu có address thì tự động fill thông tin lên form giao hàng
+                    if (address) {
+                      // Gửi thêm thông tin cho form ngoài POSPage
+                      if (typeof window !== 'undefined' && window.dispatchEvent) {
+                        window.dispatchEvent(new CustomEvent('auto-fill-shipping-info', { detail: address }));
+                      }
+                    }
                   }}
                   style={{
                     width: '100%',
@@ -523,23 +527,6 @@ export default function CustomerSelector({
               </button>
             </form>
           </div>
-        </div>
-      )}
-      {successMessage && (
-        <div style={{
-          position: 'fixed',
-          top: 24,
-          right: 24,
-          background: '#4caf50',
-          color: '#fff',
-          padding: '14px 28px',
-          borderRadius: 8,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          fontWeight: 600,
-          fontSize: 16,
-          zIndex: 4000
-        }}>
-          {successMessage}
         </div>
       )}
     </div>

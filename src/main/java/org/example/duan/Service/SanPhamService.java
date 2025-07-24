@@ -24,19 +24,11 @@ public class SanPhamService {
     private final ThuongHieuRepository thuongHieuRepository;
     private final DanhMucRepository danhMucRepository;
     private final SanPhamMapper sanPhamMapper;
-    // Thêm repository chi tiết sản phẩm
-    private final org.example.duan.Repository.ChiTietSanPhamRepository chiTietSanPhamRepository;
 
     public List<SanPhamDTO> getAll() {
         return sanPhamRepository.findAll()
                 .stream()
-                .map(sp -> {
-                    SanPhamDTO dto = sanPhamMapper.toDTO(sp);
-                    // Lấy tổng số lượng biến thể
-                    Integer tong = chiTietSanPhamRepository.getTongSoLuongBienTheBySanPhamId(sp.getIdSanPham());
-                    dto.setTongSoLuongBienThe(tong != null ? tong : 0);
-                    return dto;
-                })
+                .map(sanPhamMapper::toDTO)
                 .collect(Collectors.toList());
     }
 

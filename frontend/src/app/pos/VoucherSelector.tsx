@@ -24,19 +24,18 @@ interface Props {
 }
 
 export default function VoucherSelector({ vouchers, onSelectAction, onCloseAction, allowFreeShip = false }: Props) {
-  // Lọc các voucher còn số lượng > 0, trạng thái ĐANG DIỄN RA và (nếu không cho phép thì không phải kiểu FREE_SHIP)
-  const selectableVouchers = vouchers.filter(v => v.soLuong > 0 && v.trangThai === 'Đang diễn ra' && (allowFreeShip || v.kieuGiamGia !== 'FREE_SHIP'));
+  // Lọc các voucher còn số lượng > 0, trạng thái hợp lệ và (nếu không cho phép thì không phải kiểu FREE_SHIP)
+  const selectableVouchers = vouchers.filter(v => v.soLuong > 0 && v.trangThai?.toLowerCase() === 'hoạt động' && (allowFreeShip || v.kieuGiamGia !== 'FREE_SHIP'));
   
   // Helper hiển thị thông tin giảm giá
   const getDiscountInfo = (voucher: Voucher) => {
-    if (voucher.kieuGiamGia === 'PERCENT') {
+    if (voucher.kieuGiamGia === 'PHAN_TRAM') {
       return `${voucher.phanTramGiamGia}% (tối đa ${voucher.giaTriToiDa.toLocaleString()}đ)`;
     } else if (voucher.kieuGiamGia === 'FREE_SHIP') {
       return 'Miễn phí vận chuyển';
-    } else if (voucher.kieuGiamGia === 'FIXED') {
+    } else {
       return `${voucher.giaTriToiDa.toLocaleString()}đ`;
     }
-    return '';
   };
   
   return (
@@ -71,9 +70,6 @@ export default function VoucherSelector({ vouchers, onSelectAction, onCloseActio
                 </div>
                 <div style={{ fontSize: '12px', color: '#999' }}>
                   Đơn hàng tối thiểu: {v.giaTriToiThieu.toLocaleString()}đ
-                </div>
-                <div style={{ fontSize: '12px', color: '#888', marginTop: 2 }}>
-                  <b>Trạng thái:</b> {v.trangThai}
                 </div>
               </div>
               <button 

@@ -1,7 +1,18 @@
 'use client';
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { ProductDetail } from './types';
+
+interface ProductDetail {
+  idChiTietSanPham: number;
+  maSanPham: string;
+  tenSanPham: string;
+  tenThuongHieu: string;
+  tenDanhMuc: string;
+  tenMauSac: string;
+  tenKichCo: string;
+  gia: number;
+  soLuong: number;
+}
 
 interface Props {
   onSelectAction: (product: ProductDetail, qty: number) => void;
@@ -28,7 +39,6 @@ export default function ProductSelector({ onSelectAction, onCloseAction, product
 
   // Lọc dữ liệu theo filter và tìm kiếm
   const filtered = products.filter(d =>
-    d.trangThai === 'Đang bán' && d.soLuong > 0 &&
     (!brand || d.tenThuongHieu === brand) &&
     (!category || d.tenDanhMuc === category) &&
     (!color || d.tenMauSac === color) &&

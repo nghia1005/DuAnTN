@@ -38,9 +38,6 @@ public class SanPhamDTO {
 
     // Thêm trường đường dẫn ảnh đại diện sản phẩm cha
     private String duongDanHinhAnh;
-
-    // Thêm trường tổng số lượng các biến thể
-    private Integer tongSoLuongBienThe;
 } 
 
 

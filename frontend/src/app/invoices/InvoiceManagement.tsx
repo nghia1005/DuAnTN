@@ -109,7 +109,7 @@ export default function InvoiceManagement() {
                     />
                     <span className="search-icon">🔍</span>
                 </div>
-
+                
                 <div className="filter-group">
                     <select
                         value={filterStatus}
@@ -140,61 +140,61 @@ export default function InvoiceManagement() {
                     <div className="invoice-table">
                         <table>
                             <thead>
-                            <tr>
-                                <th>Mã hóa đơn</th>
-                                <th>Ngày tạo</th>
-                                <th>Khách hàng</th>
-                                <th>Tổng tiền</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
+                                <tr>
+                                    <th>Mã hóa đơn</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Khách hàng</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            {filteredInvoices.map((invoice) => (
-                                <tr key={invoice.id}>
-                                    <td>
-                                        <span className="invoice-code">{invoice.maHoaDon}</span>
-                                    </td>
-                                    <td>{new Date(invoice.ngayTao).toLocaleDateString('vi-VN')}</td>
-                                    <td>{invoice.tenKhachHang}</td>
-                                    <td>
-                                        <span className="amount">{formatCurrency(invoice.tongTien)}</span>
-                                    </td>
-                                    <td>
-                                            <span
+                                {filteredInvoices.map((invoice) => (
+                                    <tr key={invoice.id}>
+                                        <td>
+                                            <span className="invoice-code">{invoice.maHoaDon}</span>
+                                        </td>
+                                        <td>{new Date(invoice.ngayTao).toLocaleDateString('vi-VN')}</td>
+                                        <td>{invoice.tenKhachHang}</td>
+                                        <td>
+                                            <span className="amount">{formatCurrency(invoice.tongTien)}</span>
+                                        </td>
+                                        <td>
+                                            <span 
                                                 className="status-badge"
                                                 style={{ backgroundColor: getStatusColor(invoice.trangThai) }}
                                             >
                                                 {invoice.trangThai}
                                             </span>
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
-                                                className="btn btn-sm btn-info"
-                                                onClick={() => handleViewInvoice(invoice)}
-                                                title="Xem chi tiết"
-                                            >
-                                                👁️
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-secondary"
-                                                onClick={() => handlePrintInvoice(invoice)}
-                                                title="In hóa đơn"
-                                            >
-                                                🖨️
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-success"
-                                                onClick={() => handleExportInvoice(invoice)}
-                                                title="Xuất hóa đơn"
-                                            >
-                                                📥
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button
+                                                    className="btn btn-sm btn-info"
+                                                    onClick={() => handleViewInvoice(invoice)}
+                                                    title="Xem chi tiết"
+                                                >
+                                                    👁️
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm btn-secondary"
+                                                    onClick={() => handlePrintInvoice(invoice)}
+                                                    title="In hóa đơn"
+                                                >
+                                                    🖨️
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm btn-success"
+                                                    onClick={() => handleExportInvoice(invoice)}
+                                                    title="Xuất hóa đơn"
+                                                >
+                                                    📥
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -403,4 +403,4 @@ export default function InvoiceManagement() {
             `}</style>
         </div>
     );
-}
+} 

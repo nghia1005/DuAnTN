@@ -118,33 +118,32 @@ public class ChiTietSanPhamService {
     }
 
     public ChiTietSanPhamDTO update(Integer id, ChiTietSanPhamDTO chiTietSanPhamDTO) {
-        Optional<ChiTietSanPham> opt = chiTietSanPhamRepository.findById(id);
-        if (opt.isEmpty()) {
+        if (!chiTietSanPhamRepository.existsById(id)) {
             return null;
         }
-        ChiTietSanPham chiTietSanPham = opt.get();
 
-        // Cập nhật các trường đơn giản
-        chiTietSanPham.setSoLuong(chiTietSanPhamDTO.getSoLuong());
-        chiTietSanPham.setGia(chiTietSanPhamDTO.getGia());
-        chiTietSanPham.setTrangThai(chiTietSanPhamDTO.getTrangThai());
+        ChiTietSanPham chiTietSanPham = chiTietSanPhamMapper.toEntity(chiTietSanPhamDTO);
+        chiTietSanPham.setIdChiTietSanPham(id);
 
-        // Cập nhật quan hệ
+        // Load related entities
         if (chiTietSanPhamDTO.getIdSanPham() != null) {
             sanPhamRepository.findById(chiTietSanPhamDTO.getIdSanPham())
-                .ifPresent(chiTietSanPham::setSanPham);
+                    .ifPresent(chiTietSanPham::setSanPham);
         }
+
         if (chiTietSanPhamDTO.getIdMauSac() != null) {
             mauSacRepository.findById(chiTietSanPhamDTO.getIdMauSac())
-                .ifPresent(chiTietSanPham::setMauSac);
+                    .ifPresent(chiTietSanPham::setMauSac);
         }
+
         if (chiTietSanPhamDTO.getIdKichCo() != null) {
             kichCoRepository.findById(chiTietSanPhamDTO.getIdKichCo())
-                .ifPresent(chiTietSanPham::setKichCo);
+                    .ifPresent(chiTietSanPham::setKichCo);
         }
+
         if (chiTietSanPhamDTO.getIdHinhAnh() != null) {
             hinhAnhRepository.findById(chiTietSanPhamDTO.getIdHinhAnh())
-                .ifPresent(chiTietSanPham::setHinhAnh);
+                    .ifPresent(chiTietSanPham::setHinhAnh);
         }
 
         ChiTietSanPham updated = chiTietSanPhamRepository.save(chiTietSanPham);

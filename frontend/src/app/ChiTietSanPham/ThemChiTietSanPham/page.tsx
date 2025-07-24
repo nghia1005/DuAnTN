@@ -47,12 +47,6 @@ export default function ThemChiTietSanPhamPage() {
   const [variantErrors, setVariantErrors] = useState<{[key: string]: string}>({});
   const [showVariantErrors, setShowVariantErrors] = useState(false);
 
-  // State cho modal thuộc tính chung
-  const [openCommonAttrModal, setOpenCommonAttrModal] = useState(false);
-  const [commonSoLuong, setCommonSoLuong] = useState('');
-  const [commonGia, setCommonGia] = useState('');
-  const [commonError, setCommonError] = useState('');
-
   // Fetch dữ liệu động từ backend khi mount
   useEffect(() => {
     fetch('http://localhost:8080/danh-muc/hien-thi')
@@ -198,9 +192,9 @@ export default function ThemChiTietSanPhamPage() {
       if (!res.ok || !data.idSanPham) {
         // Nếu lỗi là trùng mã sản phẩm
         if (
-            (data.message && data.message.toLowerCase().includes('duplicate')) ||
-            (data.message && data.message.toLowerCase().includes('tồn tại')) ||
-            (data.message && data.message.toLowerCase().includes('trùng'))
+          (data.message && data.message.toLowerCase().includes('duplicate')) ||
+          (data.message && data.message.toLowerCase().includes('tồn tại')) ||
+          (data.message && data.message.toLowerCase().includes('trùng'))
         ) {
           setMaSanPhamError('Mã sản phẩm đã tồn tại!');
           return; // KHÔNG show snackbar nữa
@@ -304,81 +298,46 @@ export default function ThemChiTietSanPhamPage() {
   // Thêm hàm kiểm tra biến thể hợp lệ
   const isAllVariantsValid = variants.length > 0 && variants.every(v => v.soLuong && v.gia && v.hinhAnh);
 
-  // Tự động sinh biến thể khi đủ thông tin
-  useEffect(() => {
-    // Kiểm tra đủ thông tin sản phẩm, màu sắc, kích cỡ
-    const valid =
-        addMaSanPham.trim() &&
-        addTenSanPham.trim() &&
-        addIdDanhMuc &&
-        addIdThuongHieu &&
-        addTrangThai &&
-        addMultiMauSac.length > 0 &&
-        addMultiKichCo.length > 0;
-    if (valid) {
-      // Sinh variants
-      const newVariants = [];
-      for (const mauSacId of addMultiMauSac) {
-        for (const kichCoId of addMultiKichCo) {
-          newVariants.push({
-            idMauSac: mauSacId,
-            idKichCo: kichCoId,
-            soLuong: '',
-            gia: '',
-            hinhAnh: null,
-            previewImg: ''
-          });
-        }
-      }
-      setVariants(newVariants);
-      setShowVariants(true);
-      setVariantError('');
-    } else {
-      setVariants([]);
-      setShowVariants(false);
-    }
-  }, [addMaSanPham, addTenSanPham, addIdDanhMuc, addIdThuongHieu, addTrangThai, addMultiMauSac, addMultiKichCo]);
-
   // --- Giao diện như modal cũ nhưng là trang riêng ---
   const router = useRouter();
   // CustomBannerAlert: Banner lớn, căn giữa trên cùng, không icon, không Alert MUI
   function CustomBannerAlert({ open, message, severity, onClose }: { open: boolean, message: string, severity: 'success' | 'error', onClose: () => void }) {
     if (!open) return null;
     return (
-        <div style={{
-          position: 'fixed',
-          top: 24,
-          right: 32,
-          left: 'auto',
-          transform: 'none',
-          zIndex: 1300,
-          background: severity === 'success' ? '#22c55e' : '#ef4444',
-          color: '#fff',
-          padding: '10px 22px',
-          borderRadius: 8,
-          fontWeight: 600,
-          fontSize: 16,
-          minWidth: 220,
-          maxWidth: '60vw',
-          textAlign: 'left',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          gap: 10,
-          boxShadow: 'none',
-          border: 'none'
-        }}>
-          <span style={{flex:1}}>{message}</span>
-          <button onClick={onClose} style={{
-            background:'none',
-            border:'none',
-            color:'#fff',
-            fontSize:20,
-            fontWeight:900,
-            cursor:'pointer',
-            marginLeft:8
-          }}>×</button>
-        </div>
+      <div style={{
+        position: 'fixed',
+        top: 24,
+        right: 32,
+        left: 'auto',
+        transform: 'none',
+        zIndex: 1300,
+        background: severity === 'success' ? '#22c55e' : '#ef4444',
+        color: '#fff',
+        padding: '10px 22px',
+        borderRadius: 8,
+        fontWeight: 600,
+        fontSize: 16,
+        minWidth: 220,
+        maxWidth: '60vw',
+        textAlign: 'left',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        gap: 10,
+        boxShadow: 'none',
+        border: 'none'
+      }}>
+        <span style={{flex:1}}>{message}</span>
+        <button onClick={onClose} style={{
+          background:'none',
+          border:'none',
+          color:'#fff',
+          fontSize:20,
+          fontWeight:900,
+          cursor:'pointer',
+          marginLeft:8
+        }}>×</button>
+      </div>
     );
   }
   // Tự động ẩn banner sau 4s
@@ -388,596 +347,504 @@ export default function ThemChiTietSanPhamPage() {
       return () => clearTimeout(t);
     }
   }, [snackbar.open]);
-
-  const numberInputNoSpinnerSx = {
-    '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
-      WebkitAppearance: 'none',
-      margin: 0,
-    },
-    '& input[type=number]': {
-      MozAppearance: 'textfield',
-    },
-    '& .MuiOutlinedInput-root': {
-      '&.Mui-focused fieldset': {
-        borderColor: '#bdbdbd',
-      },
-    },
-    '& label.Mui-focused': {
-      color: '#757575',
-    },
-  };
   return (
-      <Box sx={{background:'#fffbe6', minHeight:'100vh', pt:2, px:2}}>
-        <Box sx={{maxWidth:1400, mx:'auto', background:'#fffbe6'}}>
-          <Typography variant="h4" fontWeight={700} mb={3} color="#2c2c2c" textAlign="center">Thêm chi tiết sản phẩm</Typography>
-          <Box sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 6,
-            alignItems: 'stretch',
-            justifyContent: 'flex-start',
-            mb: 2,
-            pl: { xs: 0, md: 2 }
-          }}>
-            {/* Cột trái: Thông tin sản phẩm cha */}
-            <Paper sx={{
-              flex: '0 0 380px',
-              minWidth: 320,
-              maxWidth: 400,
-              p: 4,
-              borderRadius: 4,
-              boxShadow: 3,
-              bgcolor: '#fff',
-              mb: { xs: 3, md: 0 },
-              alignSelf: 'stretch',
-              minHeight: 520,
-              pt: 2
-            }} elevation={3}>
-              <Box sx={{display:'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent:'flex-end', mb:2, gap:{ xs:1.5, md:1 }, width: '100%'}}>
-                <Button
-                    variant="contained"
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 13,
-                      borderRadius: 10,
-                      minWidth: 120,
-                      maxWidth: '100%',
-                      height: 44,
-                      background: addMode === 'new' ? '#b59d3a' : '#fff',
-                      color: addMode === 'new' ? '#fff' : '#b59d3a',
-                      border: `2px solid #b59d3a`,
-                      boxShadow: 'none',
-                      marginRight: 0,
-                      marginBottom: 10,
-                      transition: 'all 0.2s',
-                      whiteSpace: 'normal',
-                      padding: '0 18px',
-                      textAlign: 'center',
-                      overflowWrap: 'break-word',
-                    }}
-                    onClick={() => {
-                      setAddMode('new');
-                      setAddIdSanPham('');
-                      setAddMaSanPham('');
-                      setAddTenSanPham('');
-                      setAddMoTa('');
-                      setAddIdDanhMuc('');
-                      setAddIdThuongHieu('');
-                      setAddTrangThai('');
-                    }}
-                >
-                  TẠO MỚI SẢN PHẨM
-                </Button>
-                <Button
-                    variant="contained"
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 13,
-                      borderRadius: 10,
-                      minWidth: 120,
-                      maxWidth: '100%',
-                      height: 44,
-                      background: addMode === 'select' ? '#b59d3a' : '#fff',
-                      color: addMode === 'select' ? '#fff' : '#b59d3a',
-                      border: `2px solid #b59d3a`,
-                      boxShadow: 'none',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'normal',
-                      padding: '0 18px',
-                      textAlign: 'center',
-                      overflowWrap: 'break-word',
-                    }}
-                    onClick={() => {
-                      setAddMode('select');
-                      setAddIdSanPham(products[0]?.idSanPham ? String(products[0].idSanPham) : '');
-                      const selected = products[0];
-                      if (selected) {
-                        setAddMaSanPham(selected.maSanPham || '');
-                        setAddTenSanPham(selected.tenSanPham || '');
-                        setAddMoTa(selected.moTa || '');
-                        setAddIdDanhMuc(selected.idDanhMuc ? String(selected.idDanhMuc) : '');
-                        setAddIdThuongHieu(selected.idThuongHieu ? String(selected.idThuongHieu) : '');
-                        setAddTrangThai(selected.trangThai || '');
-                      }
-                    }}
-                >
-                  CHỌN SẢN PHẨM CÓ SẴN
-                </Button>
-              </Box>
-              {addMode === 'select' && (
-                  <FormControl fullWidth size="small" sx={{mb:2}}>
-                    <InputLabel>Id sản phẩm</InputLabel>
-                    <Select
-                        value={addIdSanPham || ''}
-                        label="Id sản phẩm"
-                        onChange={e => {
-                          const id = e.target.value;
-                          setAddIdSanPham(id);
-                          const selected = products.find(p => String(p.idSanPham) === String(id));
-                          if (selected) {
-                            setAddMaSanPham(selected.maSanPham || '');
-                            setAddTenSanPham(selected.tenSanPham || '');
-                            setAddMoTa(selected.moTa || '');
-                            setAddIdDanhMuc(selected.idDanhMuc ? String(selected.idDanhMuc) : '');
-                            setAddIdThuongHieu(selected.idThuongHieu ? String(selected.idThuongHieu) : '');
-                            setAddTrangThai(selected.trangThai || '');
-                          }
-                        }}
-                    >
-                      <MenuItem value="">---</MenuItem>
-                      {products.map(p => (
-                          <MenuItem key={p.idSanPham} value={String(p.idSanPham)}>{p.idSanPham}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-              )}
-              <TextField label="Mã sản phẩm" fullWidth size="small" sx={{mb:2}} value={addMaSanPham}
-                         onChange={e => {
-                           setMaSanPhamError('');
-                           setAddMaSanPham(e.target.value);
-                           checkMaSanPhamTrung(e.target.value);
-                         }}
-                         InputProps={{ readOnly: addMode === 'select' }}
-                         error={!!maSanPhamError}
-                         helperText={maSanPhamError}
-              />
-              <TextField label="Tên sản phẩm" fullWidth size="small" sx={{mb:2}} value={addTenSanPham} onChange={e => { setTenSanPhamError(''); setAddTenSanPham(e.target.value); }} InputProps={{ readOnly: addMode === 'select' }} error={!!tenSanPhamError} helperText={tenSanPhamError} />
-              <TextField label="Mô tả" fullWidth size="small" multiline minRows={3} sx={{mb:2}} value={addMoTa} onChange={e=>setAddMoTa(e.target.value)} InputProps={{ readOnly: addMode === 'select' }} />
-              {/* Danh mục */}
-              <FormControl fullWidth size="small" sx={{mb:2}} error={!!danhMucError}>
-                <InputLabel>Danh mục</InputLabel>
-                <Box sx={{display:'flex', alignItems:'center'}}>
-                  <Select
-                      value={addIdDanhMuc}
-                      label="Danh mục"
-                      onChange={e => {
-                        const value = String(e.target.value);
-                        setAddIdDanhMuc(value);
-                        if (value !== '') setDanhMucError('');
-                      }}
-                      renderValue={selected => selected ? (danhMucs.find(dm => String(dm.idDanhMuc) === selected)?.tenDanhMuc || 'Danh mục') : 'Danh mục'}
-                      sx={{flex:1}}
-                  >
-                    <MenuItem value="">---</MenuItem>
-                    {danhMucs.map(dm => (
-                        <MenuItem key={dm.idDanhMuc} value={String(dm.idDanhMuc)}>{dm.tenDanhMuc}</MenuItem>
-                    ))}
-                  </Select>
-                  <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('danhmuc')}>
-                    <AddIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-                {danhMucError && <Typography color="error" fontSize={13} mt={0.5}>{danhMucError}</Typography>}
-              </FormControl>
-              {/* Thương hiệu */}
-              <FormControl fullWidth size="small" sx={{mb:2}} error={!!thuongHieuError}>
-                <InputLabel>Thương hiệu</InputLabel>
-                <Box sx={{display:'flex', alignItems:'center'}}>
-                  <Select
-                      value={addIdThuongHieu}
-                      label="Thương hiệu"
-                      onChange={e => {
-                        const value = String(e.target.value);
-                        setAddIdThuongHieu(value);
-                        if (value !== '') setThuongHieuError('');
-                      }}
-                      renderValue={selected => selected ? (thuongHieus.find(th => String(th.idThuongHieu) === selected)?.tenThuongHieu || 'Thương hiệu') : 'Thương hiệu'}
-                      sx={{flex:1}}
-                  >
-                    <MenuItem value="">---</MenuItem>
-                    {thuongHieus.map(th => (
-                        <MenuItem key={th.idThuongHieu} value={String(th.idThuongHieu)}>{th.tenThuongHieu}</MenuItem>
-                    ))}
-                  </Select>
-                  <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('thuonghieu')}>
-                    <AddIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-                {thuongHieuError && <Typography color="error" fontSize={13} mt={0.5}>{thuongHieuError}</Typography>}
-              </FormControl>
-              <FormControl fullWidth size="small" sx={{mb:2}} error={!!trangThaiError}>
-                <InputLabel>Trạng thái</InputLabel>
+    <Box sx={{background:'#fffbe6', minHeight:'100vh', pt:2, px:2}}>
+      <Box sx={{maxWidth:1400, mx:'auto', background:'#fffbe6'}}>
+        <Typography variant="h4" fontWeight={700} mb={3} color="#2c2c2c" textAlign="center">Thêm chi tiết sản phẩm</Typography>
+        <Box sx={{display:'flex', flexDirection:{xs:'column',md:'row'}, gap:6, alignItems:'flex-start', justifyContent:{ xs: 'center', md: 'flex-start' }, mb:2, pl:{ xs:0, md:4 }}}>
+          {/* Cột trái: Thông tin sản phẩm cha */}
+          <Paper sx={{flex:'0 0 440px', minWidth:400, maxWidth:480, p:4, borderRadius:4, boxShadow:3, bgcolor:'#fff', mb:{xs:3,md:0}, alignSelf:'stretch'}} elevation={3}>
+            <Box sx={{display:'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent:'flex-end', mb:2, gap:{ xs:1.5, md:1 }, width: '100%'}}>
+              <Button
+                variant="contained"
+                style={{
+                  fontWeight: 600,
+                  fontSize: 13,
+                  borderRadius: 10,
+                  minWidth: 120,
+                  maxWidth: '100%',
+                  height: 44,
+                  background: addMode === 'new' ? '#b59d3a' : '#fff',
+                  color: addMode === 'new' ? '#fff' : '#b59d3a',
+                  border: `2px solid #b59d3a`,
+                  boxShadow: 'none',
+                  marginRight: 0,
+                  marginBottom: 10,
+                  transition: 'all 0.2s',
+                  whiteSpace: 'normal',
+                  padding: '0 18px',
+                  textAlign: 'center',
+                  overflowWrap: 'break-word',
+                }}
+                onClick={() => {
+                  setAddMode('new');
+                  setAddIdSanPham('');
+                  setAddMaSanPham('');
+                  setAddTenSanPham('');
+                  setAddMoTa('');
+                  setAddIdDanhMuc('');
+                  setAddIdThuongHieu('');
+                  setAddTrangThai('');
+                }}
+              >
+                TẠO MỚI SẢN PHẨM
+              </Button>
+              <Button
+                variant="contained"
+                style={{
+                  fontWeight: 600,
+                  fontSize: 13,
+                  borderRadius: 10,
+                  minWidth: 120,
+                  maxWidth: '100%',
+                  height: 44,
+                  background: addMode === 'select' ? '#b59d3a' : '#fff',
+                  color: addMode === 'select' ? '#fff' : '#b59d3a',
+                  border: `2px solid #b59d3a`,
+                  boxShadow: 'none',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'normal',
+                  padding: '0 18px',
+                  textAlign: 'center',
+                  overflowWrap: 'break-word',
+                }}
+                onClick={() => {
+                  setAddMode('select');
+                  setAddIdSanPham(products[0]?.idSanPham ? String(products[0].idSanPham) : '');
+                  const selected = products[0];
+                  if (selected) {
+                    setAddMaSanPham(selected.maSanPham || '');
+                    setAddTenSanPham(selected.tenSanPham || '');
+                    setAddMoTa(selected.moTa || '');
+                    setAddIdDanhMuc(selected.idDanhMuc ? String(selected.idDanhMuc) : '');
+                    setAddIdThuongHieu(selected.idThuongHieu ? String(selected.idThuongHieu) : '');
+                    setAddTrangThai(selected.trangThai || '');
+                  }
+                }}
+              >
+                CHỌN SẢN PHẨM CÓ SẴN
+              </Button>
+            </Box>
+            {addMode === 'select' && (
+              <FormControl fullWidth size="small" sx={{mb:2}}>
+                <InputLabel>Id sản phẩm</InputLabel>
                 <Select
-                    value={addTrangThai}
-                    label="Trạng thái"
-                    onChange={e => {
-                      const value = String(e.target.value);
-                      setAddTrangThai(value);
-                      if (value !== '') setTrangThaiError('');
-                    }}
-                    renderValue={selected => selected ? selected : 'Trạng thái'}
+                  value={addIdSanPham || ''}
+                  label="Id sản phẩm"
+                  onChange={e => {
+                    const id = e.target.value;
+                    setAddIdSanPham(id);
+                    const selected = products.find(p => String(p.idSanPham) === String(id));
+                    if (selected) {
+                      setAddMaSanPham(selected.maSanPham || '');
+                      setAddTenSanPham(selected.tenSanPham || '');
+                      setAddMoTa(selected.moTa || '');
+                      setAddIdDanhMuc(selected.idDanhMuc ? String(selected.idDanhMuc) : '');
+                      setAddIdThuongHieu(selected.idThuongHieu ? String(selected.idThuongHieu) : '');
+                      setAddTrangThai(selected.trangThai || '');
+                    }
+                  }}
                 >
                   <MenuItem value="">---</MenuItem>
-                  <MenuItem value="Đang bán">Đang bán</MenuItem>
-                  <MenuItem value="Ngừng bán">Ngừng bán</MenuItem>
+                  {products.map(p => (
+                    <MenuItem key={p.idSanPham} value={String(p.idSanPham)}>{p.idSanPham}</MenuItem>
+                  ))}
                 </Select>
-                {trangThaiError && <Typography color="error" fontSize={13} mt={0.5}>{trangThaiError}</Typography>}
               </FormControl>
-              {addMode === 'new' && (
-                  <Button
-                      variant="contained"
-                      style={{
-                        background: '#b59d3a',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 16,
-                        borderRadius: 10,
-                        height: 44,
-                        boxShadow: '0 2px 8px #b59d3a22',
-                        padding: '0 24px',
-                        textAlign: 'center',
-                        whiteSpace: 'nowrap',
-                        marginTop: 0,
-                      }}
-                      fullWidth
-                      onClick={handleCreateProduct}
-                  >
-                    + Thêm sản phẩm
-                  </Button>
-              )}
-            </Paper>
-            {/* Cột phải: Chọn màu/kích cỡ và bảng biến thể */}
-            <Paper sx={{
-              flex: 1,
-              minWidth: 500,
-              maxWidth: 1200,
-              p: 4,
-              borderRadius: 4,
-              boxShadow: 3,
-              bgcolor: '#fff',
-              alignSelf: 'stretch',
-              minHeight: 520,
-              pt: 2
-            }} elevation={3}>
-              {/* Đặt nút Thêm thuộc tính chung cùng hàng với select màu sắc và kích cỡ */}
-              <Box sx={{mb:3, display:'flex', gap:2, alignItems:'center', flexWrap:'wrap', justifyContent:'flex-start'}}>
-                {/* Màu sắc */}
-                <FormControl size="small" sx={{minWidth:180}} error={!!mauSacError}>
-                  <Box sx={{display:'flex', alignItems:'center'}}>
-                    <Select
-                        multiple
-                        displayEmpty
-                        value={addMultiMauSac}
-                        onChange={e=>setAddMultiMauSac(typeof e.target.value==='string'?e.target.value.split(','):e.target.value as string[])}
-                        renderValue={selected => selected.length ? mauSacs.filter(ms => selected.includes(String(ms.idMauSac))).map(ms=>ms.mauSac).join(', ') : 'Chọn màu sắc'}
-                        sx={{flex:1}}
-                    >
-                      {mauSacs.map(ms=>(<MenuItem key={ms.idMauSac} value={String(ms.idMauSac)}>{ms.mauSac}</MenuItem>))}
-                    </Select>
-                    <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('mausac')}><AddIcon fontSize="small" /></IconButton>
-                  </Box>
-                  {mauSacError && <Typography color="error" fontSize={13} mt={0.5}>{mauSacError}</Typography>}
-                </FormControl>
-                {/* Kích cỡ */}
-                <FormControl size="small" sx={{minWidth:180}} error={!!kichCoError}>
-                  <Box sx={{display:'flex', alignItems:'center'}}>
-                    <Select
-                        multiple
-                        displayEmpty
-                        value={addMultiKichCo}
-                        onChange={e=>setAddMultiKichCo(typeof e.target.value==='string'?e.target.value.split(','):e.target.value as string[])}
-                        renderValue={selected => selected.length ? kichCos.filter(kc => selected.includes(String(kc.idKichCo))).map(kc=>kc.kichCo).join(', ') : 'Chọn kích cỡ'}
-                        sx={{flex:1}}
-                    >
-                      {kichCos.map(kc=>(<MenuItem key={kc.idKichCo} value={String(kc.idKichCo)}>{kc.kichCo}</MenuItem>))}
-                    </Select>
-                    <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('kichco')}><AddIcon fontSize="small" /></IconButton>
-                  </Box>
-                  {kichCoError && <Typography color="error" fontSize={13} mt={0.5}>{kichCoError}</Typography>}
-                </FormControl>
-                {/* Nút Thêm thuộc tính chung */}
-                <Button
-                    variant="contained"
-                    sx={{
-                      background: '#b59d3a',
-                      color: '#fff',
-                      fontWeight: 700,
-                      fontSize: 15,
-                      borderRadius: 2,
-                      px: 2.5,
-                      py: 1,
-                      boxShadow: '0 2px 8px #b59d3a22',
-                      '&:hover': { background: '#a88c2a' },
-                      textTransform: 'none',
-                      minWidth: 0,
-                      ml: 2
-                    }}
-                    onClick={() => {
-                      setCommonSoLuong('');
-                      setCommonGia('');
-                      setCommonError('');
-                      setOpenCommonAttrModal(true);
-                    }}
+            )}
+            <TextField label="Mã sản phẩm" fullWidth size="small" sx={{mb:2}} value={addMaSanPham} 
+              onChange={e => { 
+                setMaSanPhamError(''); 
+                setAddMaSanPham(e.target.value); 
+                checkMaSanPhamTrung(e.target.value);
+              }} 
+              InputProps={{ readOnly: addMode === 'select' }} 
+              error={!!maSanPhamError} 
+              helperText={maSanPhamError} 
+            />
+            <TextField label="Tên sản phẩm" fullWidth size="small" sx={{mb:2}} value={addTenSanPham} onChange={e => { setTenSanPhamError(''); setAddTenSanPham(e.target.value); }} InputProps={{ readOnly: addMode === 'select' }} error={!!tenSanPhamError} helperText={tenSanPhamError} />
+            <TextField label="Mô tả" fullWidth size="small" multiline minRows={3} sx={{mb:2}} value={addMoTa} onChange={e=>setAddMoTa(e.target.value)} InputProps={{ readOnly: addMode === 'select' }} />
+            {/* Danh mục */}
+            <FormControl fullWidth size="small" sx={{mb:2}} error={!!danhMucError}>
+              <InputLabel>Danh mục</InputLabel>
+              <Box sx={{display:'flex', alignItems:'center'}}>
+                <Select
+                  value={addIdDanhMuc}
+                  label="Danh mục"
+                  onChange={e => {
+                    const value = String(e.target.value);
+                    setAddIdDanhMuc(value);
+                    if (value !== '') setDanhMucError('');
+                  }}
+                  renderValue={selected => selected ? (danhMucs.find(dm => String(dm.idDanhMuc) === selected)?.tenDanhMuc || 'Danh mục') : 'Danh mục'}
+                  sx={{flex:1}}
                 >
-                  Thêm thuộc tính chung
-                </Button>
+                  <MenuItem value="">---</MenuItem>
+                  {danhMucs.map(dm => (
+                    <MenuItem key={dm.idDanhMuc} value={String(dm.idDanhMuc)}>{dm.tenDanhMuc}</MenuItem>
+                  ))}
+                </Select>
+                <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('danhmuc')}>
+                  <AddIcon fontSize="small" />
+                </IconButton>
               </Box>
-              {variantError && <Typography color="error" sx={{mb:1}}>{variantError}</Typography>}
-              {/* Bảng nhập từng biến thể */}
-              {showVariants && (
-                  <TableContainer component={Paper} sx={{ mt: 0, maxHeight: 400, overflow: 'auto' }}>
-                    <Table stickyHeader>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 90 }}>Màu sắc</TableCell>
-                          <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 90 }}>Kích cỡ</TableCell>
-                          <TableCell>Số lượng</TableCell>
-                          <TableCell>Giá</TableCell>
-                          <TableCell>Ảnh</TableCell>
-                          <TableCell align="center" sx={{ width: 48 }}></TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {variants.length === 0 ? (
-                                <TableRow>
-                                  <TableCell colSpan={6} align="center" style={{ color: '#888', fontStyle: 'italic' }}>
-                                    Hãy chọn màu sắc và kích cỡ để tạo biến thể
-                                  </TableCell>
-                                </TableRow>
-                            ) :
-                            variants.map((v, idx) => (
-                                <React.Fragment key={v.idMauSac + '-' + v.idKichCo}>
-                                  <TableRow>
-                                    <TableCell>{mauSacs.find(ms => String(ms.idMauSac) === v.idMauSac)?.mauSac || v.idMauSac}</TableCell>
-                                    <TableCell>{kichCos.find(kc => String(kc.idKichCo) === v.idKichCo)?.kichCo || v.idKichCo}</TableCell>
-                                    <TableCell>
-                                      <TextField
-                                          value={v.soLuong}
-                                          onChange={e => {
-                                            const newVariants = [...variants];
-                                            newVariants[idx].soLuong = e.target.value;
-                                            setVariants(newVariants);
-                                            setVariantErrors(prev => ({...prev, [v.idMauSac + '-' + v.idKichCo]: ''}));
-                                          }}
-                                          type="number"
-                                          size="small"
-                                          label={undefined}
-                                          placeholder=""
-                                          error={showVariantErrors && (!v.soLuong || isNaN(Number(v.soLuong)) || Number(v.soLuong) <= 0)}
-                                          helperText={
-                                            showVariantErrors && (!v.soLuong || isNaN(Number(v.soLuong))) ? 'Chưa nhập số lượng'
-                                                : (showVariantErrors && Number(v.soLuong) <= 0 ? 'Số lượng phải > 0' : '')
-                                          }
-                                          inputProps={{
-                                            min: 1,
-                                            step: 1,
-                                          }}
-                                          sx={numberInputNoSpinnerSx}
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <TextField
-                                          value={v.gia}
-                                          onChange={e => {
-                                            const newVariants = [...variants];
-                                            newVariants[idx].gia = e.target.value;
-                                            setVariants(newVariants);
-                                            setVariantErrors(prev => ({...prev, [v.idMauSac + '-' + v.idKichCo]: ''}));
-                                          }}
-                                          type="number"
-                                          size="small"
-                                          label={undefined}
-                                          placeholder=""
-                                          error={showVariantErrors && (!v.gia || isNaN(Number(v.gia)) || Number(v.gia) <= 0)}
-                                          helperText={
-                                            showVariantErrors && (!v.gia || isNaN(Number(v.gia))) ? 'Chưa nhập giá'
-                                                : (showVariantErrors && Number(v.gia) <= 0 ? 'Giá phải > 0' : '')
-                                          }
-                                          inputProps={{
-                                            min: 1,
-                                            step: 1,
-                                          }}
-                                          sx={numberInputNoSpinnerSx}
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <input
-                                          type="file"
-                                          accept="image/*"
-                                          style={{ color: 'transparent', width: 110 }}
-                                          onChange={e => {
-                                            const file = e.target.files?.[0] || null;
-                                            const newVariants = [...variants];
-                                            newVariants[idx].hinhAnh = file;
-                                            newVariants[idx].previewImg = file ? URL.createObjectURL(file) : '';
-                                            setVariants(newVariants);
-                                            setVariantErrors(prev => ({...prev, [v.idMauSac + '-' + v.idKichCo]: ''}));
-                                          }}
-                                      />
-                                      {v.previewImg && <img src={v.previewImg} alt="preview" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover', marginTop: 4 }} />}
-                                      {showVariantErrors && !v.hinhAnh && <Typography color="error" fontSize={13} mt={0.5}>Chọn ảnh</Typography>}
-                                    </TableCell>
-                                    <TableCell align="center">
-                                      <IconButton size="small" onClick={() => {
-                                        const newVariants = variants.filter((_, i) => i !== idx);
-                                        setVariants(newVariants);
-                                      }}>
-                                        <FaTimes style={{ color: '#888' }} />
-                                      </IconButton>
-                                    </TableCell>
-                                  </TableRow>
-                                </React.Fragment>
-                            ))
-                        }
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-              )}
-            </Paper>
-          </Box>
-          {/* Nút Hủy/Thêm luôn hiển thị */}
-          <Box sx={{display:'flex', justifyContent:'flex-end', mt:2, gap:2, maxWidth:1120, mx:'auto'}}>
-            <Button
-                variant="outlined"
-                size="medium"
-                startIcon={<FaTimes style={{fontSize:18, color:'#888'}} />}
-                sx={{
-                  fontWeight: 600,
-                  px: 3,
-                  py: 0.5,
-                  fontSize: 15,
-                  borderRadius: 3,
-                  minWidth: 110,
-                  height: 44,
-                  color: '#666',
-                  borderColor: '#bbb',
-                  borderWidth: 2,
-                  background: '#fff',
-                  '&:hover': { borderColor: '#888', background: '#f5f5f5' },
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5
+              {danhMucError && <Typography color="error" fontSize={13} mt={0.5}>{danhMucError}</Typography>}
+            </FormControl>
+            {/* Thương hiệu */}
+            <FormControl fullWidth size="small" sx={{mb:2}} error={!!thuongHieuError}>
+              <InputLabel>Thương hiệu</InputLabel>
+              <Box sx={{display:'flex', alignItems:'center'}}>
+                <Select
+                  value={addIdThuongHieu}
+                  label="Thương hiệu"
+                  onChange={e => {
+                    const value = String(e.target.value);
+                    setAddIdThuongHieu(value);
+                    if (value !== '') setThuongHieuError('');
+                  }}
+                  renderValue={selected => selected ? (thuongHieus.find(th => String(th.idThuongHieu) === selected)?.tenThuongHieu || 'Thương hiệu') : 'Thương hiệu'}
+                  sx={{flex:1}}
+                >
+                  <MenuItem value="">---</MenuItem>
+                  {thuongHieus.map(th => (
+                    <MenuItem key={th.idThuongHieu} value={String(th.idThuongHieu)}>{th.tenThuongHieu}</MenuItem>
+                  ))}
+                </Select>
+                <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('thuonghieu')}>
+                  <AddIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              {thuongHieuError && <Typography color="error" fontSize={13} mt={0.5}>{thuongHieuError}</Typography>}
+            </FormControl>
+            <FormControl fullWidth size="small" sx={{mb:2}} error={!!trangThaiError}>
+              <InputLabel>Trạng thái</InputLabel>
+              <Select
+                value={addTrangThai}
+                label="Trạng thái"
+                onChange={e => {
+                  const value = String(e.target.value);
+                  setAddTrangThai(value);
+                  if (value !== '') setTrangThaiError('');
                 }}
-                onClick={() => router.push('/ChiTietSanPham')}
-            >
-              Hủy
-            </Button>
-            <Button
+                renderValue={selected => selected ? selected : 'Trạng thái'}
+              >
+                <MenuItem value="">---</MenuItem>
+                <MenuItem value="Đang bán">Đang bán</MenuItem>
+                <MenuItem value="Ngừng bán">Ngừng bán</MenuItem>
+              </Select>
+              {trangThaiError && <Typography color="error" fontSize={13} mt={0.5}>{trangThaiError}</Typography>}
+            </FormControl>
+            {addMode === 'new' && (
+              <Button
                 variant="contained"
-                size="medium"
-                startIcon={<FaPlus style={{fontSize:18, marginRight:4}} />}
-                sx={{
-                  fontWeight: 700,
-                  px: 3,
-                  py: 0.5,
-                  fontSize: 16,
-                  borderRadius: 3,
-                  minWidth: 150,
-                  height: 44,
+                style={{
                   background: '#b59d3a',
                   color: '#fff',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  borderRadius: 10,
+                  height: 44,
                   boxShadow: '0 2px 8px #b59d3a22',
-                  '&:hover': { background: '#a88c2a' },
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5
+                  padding: '0 24px',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  marginTop: 0,
                 }}
-                onClick={handleAddAll}
-            >
-              Thêm
-            </Button>
-          </Box>
-          {/* Banner thông báo lớn */}
-          <CustomBannerAlert open={snackbar.open} message={snackbar.message} severity={snackbar.severity} onClose={()=>setSnackbar({...snackbar, open:false})} />
-        </Box>
-        {/* Dialog thêm mới */}
-        <Dialog open={openAddDialog.open} onClose={handleCloseAddDialog}>
-          <DialogTitle>Thêm mới {openAddDialog.type === 'danhmuc' ? 'danh mục' : openAddDialog.type === 'thuonghieu' ? 'thương hiệu' : openAddDialog.type === 'mausac' ? 'màu sắc' : 'kích cỡ'}</DialogTitle>
-          <DialogContent>
-            <TextField
-                autoFocus
                 fullWidth
-                label=""
-                value={newValue}
-                onChange={e=>setNewValue(e.target.value)}
-                error={!!addError}
-                helperText={addError}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#bdbdbd',
-                    },
-                  },
-                  '& label.Mui-focused': {
-                    color: '#757575',
-                  },
+                onClick={handleCreateProduct}
+              >
+                + Thêm sản phẩm
+              </Button>
+            )}
+          </Paper>
+          {/* Cột phải: Chọn màu/kích cỡ và bảng biến thể */}
+          <Paper sx={{flex:'2 1 0%', minWidth:340, maxWidth:900, p:4, borderRadius:4, boxShadow:3, bgcolor:'#fff', alignSelf:'stretch'}} elevation={3}>
+            {/* Chọn nhiều biến thể */}
+            <Box sx={{mb:3, display:'flex', gap:2, alignItems:'center', flexWrap:'wrap'}}>
+              {/* Màu sắc */}
+              <FormControl size="small" sx={{minWidth:180}} error={!!mauSacError}>
+                <Box sx={{display:'flex', alignItems:'center'}}>
+                  <Select
+                    multiple
+                    displayEmpty
+                    value={addMultiMauSac}
+                    onChange={e=>setAddMultiMauSac(typeof e.target.value==='string'?e.target.value.split(','):e.target.value as string[])}
+                    renderValue={selected => selected.length ? mauSacs.filter(ms => selected.includes(String(ms.idMauSac))).map(ms=>ms.mauSac).join(', ') : 'Chọn màu sắc'}
+                    sx={{flex:1}}
+                  >
+                    {mauSacs.map(ms=>(<MenuItem key={ms.idMauSac} value={String(ms.idMauSac)}>{ms.mauSac}</MenuItem>))}
+                  </Select>
+                  <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('mausac')}><AddIcon fontSize="small" /></IconButton>
+                </Box>
+                {mauSacError && <Typography color="error" fontSize={13} mt={0.5}>{mauSacError}</Typography>}
+              </FormControl>
+              {/* Kích cỡ */}
+              <FormControl size="small" sx={{minWidth:180}} error={!!kichCoError}>
+                <Box sx={{display:'flex', alignItems:'center'}}>
+                  <Select
+                    multiple
+                    displayEmpty
+                    value={addMultiKichCo}
+                    onChange={e=>setAddMultiKichCo(typeof e.target.value==='string'?e.target.value.split(','):e.target.value as string[])}
+                    renderValue={selected => selected.length ? kichCos.filter(kc => selected.includes(String(kc.idKichCo))).map(kc=>kc.kichCo).join(', ') : 'Chọn kích cỡ'}
+                    sx={{flex:1}}
+                  >
+                    {kichCos.map(kc=>(<MenuItem key={kc.idKichCo} value={String(kc.idKichCo)}>{kc.kichCo}</MenuItem>))}
+                  </Select>
+                  <IconButton size="small" sx={{ml:1}} onClick={()=>handleOpenAddDialog('kichco')}><AddIcon fontSize="small" /></IconButton>
+                </Box>
+                {kichCoError && <Typography color="error" fontSize={13} mt={0.5}>{kichCoError}</Typography>}
+              </FormControl>
+              <Button
+                variant="contained"
+                style={{
+                  background: '#b59d3a',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  borderRadius: 10,
+                  height: 44,
+                  boxShadow: '0 2px 8px #b59d3a22',
+                  padding: '0 24px',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
                 }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button
-                onClick={handleCloseAddDialog}
-                sx={{ color: '#888', fontWeight: 600 }}
-            >
-              Hủy
-            </Button>
-            <Button
-                onClick={handleAddNew}
-                disabled={addLoading}
-                variant="contained"
-                sx={{ background: '#b59d3a', color: '#fff', fontWeight: 700, '&:hover': { background: '#a88c2a' } }}
-            >
-              Thêm
-            </Button>
-          </DialogActions>
-        </Dialog>
-        {/* Modal nhập thuộc tính chung */}
-        <Dialog open={openCommonAttrModal} onClose={() => setOpenCommonAttrModal(false)}>
-          <DialogTitle>Nhập số lượng và giá cho tất cả biến thể</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-              <TextField
-                  label="Số lượng"
-                  type="number"
-                  value={commonSoLuong}
-                  onChange={e => setCommonSoLuong(e.target.value)}
-                  inputProps={{ min: 1 }}
-                  sx={numberInputNoSpinnerSx}
-              />
-              <TextField
-                  label="Giá"
-                  type="number"
-                  value={commonGia}
-                  onChange={e => setCommonGia(e.target.value)}
-                  inputProps={{ min: 1 }}
-                  sx={numberInputNoSpinnerSx}
-              />
-              {commonError && <Typography color="error">{commonError}</Typography>}
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button
-                onClick={() => setOpenCommonAttrModal(false)}
-                sx={{ color: '#888', fontWeight: 600 }}
-            >
-              Hủy
-            </Button>
-            <Button
-                variant="contained"
-                sx={{ background: '#b59d3a', color: '#fff', fontWeight: 700, '&:hover': { background: '#a88c2a' } }}
                 onClick={() => {
-                  if (!commonSoLuong || isNaN(Number(commonSoLuong)) || Number(commonSoLuong) <= 0) {
-                    setCommonError('Số lượng phải > 0');
+                  // Gom lỗi vào object
+                  const error: Record<string, string> = {};
+                  if (!addMaSanPham.trim()) error.maSanPham = 'Vui lòng nhập mã sản phẩm!';
+                  if (!addTenSanPham.trim()) error.tenSanPham = 'Vui lòng nhập tên sản phẩm!';
+                  if (!addIdDanhMuc || addIdDanhMuc === '') error.danhMuc = 'Vui lòng chọn danh mục!';
+                  if (!addIdThuongHieu || addIdThuongHieu === '') error.thuongHieu = 'Vui lòng chọn thương hiệu!';
+                  if (!addTrangThai || addTrangThai === '') error.trangThai = 'Vui lòng chọn trạng thái!';
+                  if (addMultiMauSac.length === 0) error.mauSac = 'Vui lòng chọn ít nhất 1 màu sắc!';
+                  if (addMultiKichCo.length === 0) error.kichCo = 'Vui lòng chọn ít nhất 1 kích cỡ!';
+                  setMaSanPhamError(error.maSanPham || '');
+                  setTenSanPhamError(error.tenSanPham || '');
+                  setDanhMucError(error.danhMuc || '');
+                  setThuongHieuError(error.thuongHieu || '');
+                  setTrangThaiError(error.trangThai || '');
+                  setMauSacError(error.mauSac || '');
+                  setKichCoError(error.kichCo || '');
+                  if (Object.keys(error).length > 0) {
+                    setVariantError('');
+                    setVariants([]);
+                    setShowVariants(false);
                     return;
                   }
-                  if (!commonGia || isNaN(Number(commonGia)) || Number(commonGia) <= 0) {
-                    setCommonError('Giá phải > 0');
-                    return;
+                  setVariantError('');
+                  // Generate variants
+                  const newVariants = [];
+                  for (const mauSacId of addMultiMauSac) {
+                    for (const kichCoId of addMultiKichCo) {
+                      newVariants.push({
+                        idMauSac: mauSacId,
+                        idKichCo: kichCoId,
+                        soLuong: '',
+                        gia: '',
+                        hinhAnh: null,
+                        previewImg: ''
+                      });
+                    }
                   }
-                  // Cập nhật cho tất cả biến thể
-                  const newVariants = variants.map(v => ({
-                    ...v,
-                    soLuong: commonSoLuong,
-                    gia: commonGia
-                  }));
                   setVariants(newVariants);
-                  setOpenCommonAttrModal(false);
+                  setShowVariants(true);
                 }}
-            >
-              Thêm
-            </Button>
-          </DialogActions>
-        </Dialog>
+              >
+                Tạo biến thể
+              </Button>
+            </Box>
+            {variantError && <Typography color="error" sx={{mb:1}}>{variantError}</Typography>}
+            {/* Bảng nhập từng biến thể */}
+            {showVariants && (
+              <TableContainer component={Paper} sx={{ mt: 0, maxHeight: 400, overflow: 'auto' }}>
+                <Table stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Màu sắc</TableCell>
+                      <TableCell>Kích cỡ</TableCell>
+                      <TableCell>Số lượng</TableCell>
+                      <TableCell>Giá</TableCell>
+                      <TableCell>Ảnh</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {variants.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center" style={{ color: '#888', fontStyle: 'italic' }}>
+                          Hãy chọn màu sắc và kích cỡ để tạo biến thể
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      variants.map((v, idx) => (
+                        <React.Fragment key={v.idMauSac + '-' + v.idKichCo}>
+                          <TableRow>
+                            <TableCell>{mauSacs.find(ms => String(ms.idMauSac) === v.idMauSac)?.mauSac || v.idMauSac}</TableCell>
+                            <TableCell>{kichCos.find(kc => String(kc.idKichCo) === v.idKichCo)?.kichCo || v.idKichCo}</TableCell>
+                            <TableCell>
+                              <TextField
+                                value={v.soLuong}
+                                onChange={e => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].soLuong = e.target.value;
+                                  setVariants(newVariants);
+                                  setVariantErrors(prev => ({...prev, [v.idMauSac + '-' + v.idKichCo]: ''}));
+                                }}
+                                type="number"
+                                size="small"
+                                label={undefined}
+                                placeholder=""
+                                error={showVariantErrors && (!v.soLuong || isNaN(Number(v.soLuong)) || Number(v.soLuong) <= 0)}
+                                helperText={
+                                  showVariantErrors && (!v.soLuong || isNaN(Number(v.soLuong))) ? 'Chưa nhập số lượng'
+                                  : (showVariantErrors && Number(v.soLuong) <= 0 ? 'Số lượng phải > 0' : '')
+                                }
+                                inputProps={{
+                                  min: 1,
+                                  style: {
+                                    MozAppearance: 'textfield',
+                                  },
+                                  step: 1,
+                                }}
+                                sx={{
+                                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
+                                    WebkitAppearance: 'none',
+                                    margin: 0,
+                                  },
+                                  '& input[type=number]': {
+                                    MozAppearance: 'textfield',
+                                  },
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <TextField
+                                value={v.gia}
+                                onChange={e => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].gia = e.target.value;
+                                  setVariants(newVariants);
+                                  setVariantErrors(prev => ({...prev, [v.idMauSac + '-' + v.idKichCo]: ''}));
+                                }}
+                                type="number"
+                                size="small"
+                                label={undefined}
+                                placeholder=""
+                                error={showVariantErrors && (!v.gia || isNaN(Number(v.gia)) || Number(v.gia) <= 0)}
+                                helperText={
+                                  showVariantErrors && (!v.gia || isNaN(Number(v.gia))) ? 'Chưa nhập giá'
+                                  : (showVariantErrors && Number(v.gia) <= 0 ? 'Giá phải > 0' : '')
+                                }
+                                inputProps={{
+                                  min: 1,
+                                  style: {
+                                    MozAppearance: 'textfield',
+                                  },
+                                  step: 1,
+                                }}
+                                sx={{
+                                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
+                                    WebkitAppearance: 'none',
+                                    margin: 0,
+                                  },
+                                  '& input[type=number]': {
+                                    MozAppearance: 'textfield',
+                                  },
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={e => {
+                                  const file = e.target.files?.[0] || null;
+                                  const newVariants = [...variants];
+                                  newVariants[idx].hinhAnh = file;
+                                  newVariants[idx].previewImg = file ? URL.createObjectURL(file) : '';
+                                  setVariants(newVariants);
+                                  setVariantErrors(prev => ({...prev, [v.idMauSac + '-' + v.idKichCo]: ''}));
+                                }}
+                              />
+                              {v.previewImg && <img src={v.previewImg} alt="preview" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover', marginTop: 4 }} />}
+                              {showVariantErrors && !v.hinhAnh && <Typography color="error" fontSize={13} mt={0.5}>Chọn ảnh</Typography>}
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Paper>
+        </Box>
+        {/* Nút Hủy/Thêm luôn hiển thị */}
+                <Box sx={{display:'flex', justifyContent:'flex-end', mt:2, gap:2, maxWidth:1120, mx:'auto'}}>
+          <Button
+            variant="outlined"
+            size="medium"
+            startIcon={<FaTimes style={{fontSize:18, color:'#888'}} />}
+            sx={{
+              fontWeight: 600,
+              px: 3,
+              py: 0.5,
+              fontSize: 15,
+              borderRadius: 3,
+              minWidth: 110,
+              height: 44,
+              color: '#666',
+              borderColor: '#bbb',
+              borderWidth: 2,
+              background: '#fff',
+              '&:hover': { borderColor: '#888', background: '#f5f5f5' },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5
+            }}
+            onClick={() => router.push('/ChiTietSanPham')}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            size="medium"
+            startIcon={<FaPlus style={{fontSize:18, marginRight:4}} />}
+            sx={{
+              fontWeight: 700,
+              px: 3,
+              py: 0.5,
+              fontSize: 16,
+              borderRadius: 3,
+              minWidth: 150,
+              height: 44,
+              background: '#b59d3a',
+              color: '#fff',
+              boxShadow: '0 2px 8px #b59d3a22',
+              '&:hover': { background: '#a88c2a' },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5
+            }}
+            onClick={handleAddAll}
+          >
+            Thêm
+          </Button>
+        </Box>
+        {/* Banner thông báo lớn */}
+        <CustomBannerAlert open={snackbar.open} message={snackbar.message} severity={snackbar.severity} onClose={()=>setSnackbar({...snackbar, open:false})} />
       </Box>
+      {/* Dialog thêm mới */}
+      <Dialog open={openAddDialog.open} onClose={handleCloseAddDialog}>
+        <DialogTitle>Thêm mới {openAddDialog.type === 'danhmuc' ? 'danh mục' : openAddDialog.type === 'thuonghieu' ? 'thương hiệu' : openAddDialog.type === 'mausac' ? 'màu sắc' : 'kích cỡ'}</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus fullWidth label="" value={newValue} onChange={e=>setNewValue(e.target.value)} error={!!addError} helperText={addError} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddDialog}>Hủy</Button>
+          <Button onClick={handleAddNew} disabled={addLoading} variant="contained">Thêm</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

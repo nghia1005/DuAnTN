@@ -31,7 +31,7 @@ public class SanPhamMapper {
             dto.setTenDanhMuc(sanPham.getDanhMuc().getTenDanhMuc());
         }
         // Map ảnh đại diện sản phẩm cha
-        // dto.setTongSoLuongBienThe sẽ được set ở Service
+
         return dto;
     }
 

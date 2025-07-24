@@ -10,7 +10,6 @@ interface ChiTietSanPham {
   idSanPham: number;
   tenDanhMuc: string;
   idDanhMuc?: number;
-  soLuong: number;
 }
 interface DanhMuc { idDanhMuc: number; tenDanhMuc: string; }
 
@@ -198,38 +197,22 @@ export default function DanhMucPage() {
                 <th style={{ padding: 10, textAlign: 'left', borderBottom: '2px solid' }}>Mã sản phẩm</th>
                 <th style={{ padding: 10, textAlign: 'left', borderBottom: '2px solid' }}>Tên sản phẩm</th>
                 <th style={{ padding: 10, textAlign: 'left', borderBottom: '2px solid' }}>Danh mục</th>
-                <th style={{ padding: 10, textAlign: 'center', borderBottom: '2px solid' }}>Số lượng</th>
-                <th
-                  style={{
-                    height: 56,
-                    textAlign: 'center',
-                    borderBottom: '2px solid',
-                  }}
-                >
-                  Thao tác
-                </th>
+                <th style={{ padding: 10, textAlign: 'center', borderBottom: '2px solid' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {filteredChiTiet.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#b59d3a' }}>Không có dữ liệu danh mục.</td>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: 24, color: '#b59d3a' }}>Không có dữ liệu danh mục.</td>
                 </tr>
               ) : (
                 filteredChiTiet.map((ct, idx) => (
                   <tr key={ct.idChiTietSanPham}>
-                    <td style={{ padding: 10, textAlign: 'center', fontWeight: 500, verticalAlign: 'middle' }}>{idx + 1}</td>
-                    <td style={{ padding: 10, verticalAlign: 'middle' }}>{ct.maSanPham}</td>
-                    <td style={{ padding: 10, verticalAlign: 'middle' }}>{ct.tenSanPham}</td>
-                    <td style={{ padding: 10, verticalAlign: 'middle' }}>{ct.tenDanhMuc}</td>
-                    <td style={{ padding: 10, textAlign: 'center', verticalAlign: 'middle' }}>{ct.soLuong}</td>
-                    <td
-                      style={{
-                        height: 56,
-                        textAlign: 'center',
-                        verticalAlign: 'middle',
-                      }}
-                    >
+                    <td style={{ padding: 10, textAlign: 'center', fontWeight: 500 }}>{idx + 1}</td>
+                    <td style={{ padding: 10 }}>{ct.maSanPham}</td>
+                    <td style={{ padding: 10 }}>{ct.tenSanPham}</td>
+                    <td style={{ padding: 10 }}>{ct.tenDanhMuc}</td>
+                    <td style={{ padding: 10, textAlign: 'center' }}>
                       <button
                         onClick={() => handleEdit(ct)}
                         style={{
@@ -238,7 +221,7 @@ export default function DanhMucPage() {
                           borderRadius: 8,
                           width: 36,
                           height: 36,
-                          display: 'inline-flex',
+                          display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',

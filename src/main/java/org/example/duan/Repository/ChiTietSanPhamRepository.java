@@ -38,6 +38,4 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
     @Query("SELECT c FROM ChiTietSanPham c LEFT JOIN FETCH c.hinhAnh")
     List<ChiTietSanPham> findAllWithHinhAnh();
 
-    @Query("SELECT SUM(c.soLuong) FROM ChiTietSanPham c WHERE c.sanPham.idSanPham = :sanPhamId")
-    Integer getTongSoLuongBienTheBySanPhamId(@Param("sanPhamId") Integer sanPhamId);
 } 

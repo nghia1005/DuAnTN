@@ -2,26 +2,26 @@
 import React, { useState } from 'react';
 import AdminLayout from '../../component/Admin-Layout';
 import CounterInvoiceList from './CounterInvoiceList';
-// import DateTimeInput24h from '../../component/DateTimeInput24h';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import OnlineInvoice from './OnlineInvoice';
 
 export default function InvoicesPage() {
-    const [activeMenu, setActiveMenu] = useState('invoices');
-    return (
-        <AdminLayout activeMenu="invoices" onMenuChangeAction={setActiveMenu} pageTitle="Hóa đơn">
-            <CounterInvoiceList />
-            <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
-        </AdminLayout>
-    );
-}
+  // State xác định menu con đang active
+  const [activeSubMenu, setActiveSubMenu] = useState("counter-invoice");
+
+  // Hàm xử lý khi chọn menu con
+  const handleMenuChange = (menuId: string) => {
+    setActiveSubMenu(menuId);
+  };
+
+  return (
+    <AdminLayout
+      activeMenu="invoices"
+      pageTitle="Hóa đơn"
+      activeSubMenu={activeSubMenu}
+      onMenuChangeAction={handleMenuChange}
+    >
+      {activeSubMenu === "counter-invoice" && <CounterInvoiceList />}
+      {activeSubMenu === "online-invoice" && <OnlineInvoice />}
+    </AdminLayout>
+  );
+} 

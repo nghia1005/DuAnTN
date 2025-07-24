@@ -46,6 +46,11 @@ public class NhanVienController {
         return nhanVienService.getNhanVienById(id)
                 .map(nhanVien -> ResponseEntity.ok(ApiResponse.success("Lấy thông tin nhân viên thành công", nhanVien)))
 
+
+//                .map(nhanVien -> ResponseEntity.ok(ApiResponse.success(nhanVien, "Lấy thông tin nhân viên thành công")))
+
+//                .map(nhanVien -> ResponseEntity.ok(ApiResponse.success("Lấy thông tin nhân viên thành công", nhanVien)))
+
                 .orElse(ResponseEntity.ok(ApiResponse.error("Không tìm thấy nhân viên với ID: " + id)));
     }
 
@@ -64,6 +69,11 @@ public class NhanVienController {
             nhanVienDTO.setSoDienThoai(soDienThoai);
             nhanVienDTO.setEmail(email);
             NhanVienDTO createdNhanVien = nhanVienService.createNhanVien(nhanVienDTO);
+//            return ResponseEntity.ok(ApiResponse.success("Thêm nhân viên thành công!", createdNhanVien));
+
+//            NhanVienDTO createdNhanVien = nhanVienService.createNhanVien(nhanVienDTO);
+
+//            return ResponseEntity.ok(ApiResponse.success(createdNhanVien, "Thêm nhân viên thành công"));
 
             return ResponseEntity.ok(ApiResponse.success("Thêm nhân viên thành công", createdNhanVien));
 
@@ -92,6 +102,11 @@ public class NhanVienController {
         }
     }
 
+//    // Lấy danh sách vai trò
+//    @GetMapping("/vai-tro")
+//    public ResponseEntity<List<VaiTro>> getAllVaiTro() {
+//        return ResponseEntity.ok(vaiTroRepository.findAll());
+//    }
     //Đổi trạng thái
     @PutMapping("/doi-trang-thai/{id}")
     public ResponseEntity<ApiResponse<NhanVienDTO>> doiTrangThai(@PathVariable Integer id) {

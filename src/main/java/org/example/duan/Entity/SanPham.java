@@ -45,4 +45,8 @@ public class SanPham {
     @Column(name = "moTa")
     private String moTa;
 
+//    @OneToMany(mappedBy = "sanPham", cascade = CascadeType.ALL)
+//    private List<ChiTietSanPham> chiTietSanPhams;
+
+    // getters/setters
 }

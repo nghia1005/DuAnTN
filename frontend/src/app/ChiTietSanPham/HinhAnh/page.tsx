@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import AdminLayout from "@/component/Admin-Layout";
-import { FaSearch, FaSyncAlt, FaTimes, FaEdit } from "react-icons/fa";
-import { FaTh, FaTable } from "react-icons/fa";
+import { FaSearch, FaSyncAlt, FaTimes } from "react-icons/fa";
 
 interface ChiTietSanPham {
   idChiTietSanPham: number;
@@ -12,17 +11,15 @@ interface ChiTietSanPham {
   duongDanHinhAnh: string | null;
   idSanPham: number;
   idHinhAnh: number | null;
-  soLuong: number;
 }
 
 export default function HinhAnhPage() {
   const [chiTietList, setChiTietList] = useState<ChiTietSanPham[]>([]);
   const [sanPhamList, setSanPhamList] = useState<{ idSanPham: number; tenSanPham: string }[]>([]);
-  const [selectedSanPham, setSelectedSanPham] = useState<number>(-1); // Mặc định là -1 (tất cả)
+  const [selectedSanPham, setSelectedSanPham] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
   // Removed searchTerm and appliedSearch state
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   useEffect(() => {
     fetchData();
@@ -91,9 +88,10 @@ export default function HinhAnhPage() {
         <div style={{ marginTop: 24, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
           <label style={{ marginBottom: 0, marginRight: 8, fontSize: 20, fontWeight: 600, whiteSpace: 'nowrap' }}>Chọn sản phẩm:</label>
           <select
-            value={selectedSanPham === -1 ? "all" : selectedSanPham}
+            value={selectedSanPham === null ? "" : selectedSanPham === -1 ? "all" : selectedSanPham}
             onChange={(e) => {
               if (e.target.value === "all") setSelectedSanPham(-1);
+              else if (e.target.value === "") setSelectedSanPham(null);
               else setSelectedSanPham(Number(e.target.value));
             }}
             style={{ padding: 8, minWidth: 220, borderRadius: 8, border: '1.5px solid #b59d3a55', background: '#fff', fontSize: 16, color: '#222', outline: 'none', boxShadow: '0 2px 8px #b59d3a11', marginRight: 12 }}
@@ -122,217 +120,86 @@ export default function HinhAnhPage() {
               gap: 8,
               height: 40, // giảm chiều cao
             }}
-            onClick={() => setSelectedSanPham(-1)} // Luôn set về -1 khi xóa lọc
+            onClick={() => setSelectedSanPham(null)}
             title="Xóa lọc sản phẩm"
           >
             <FaTimes style={{ fontSize: 18, color: '#b59d3a' }} />
             Xóa lọc
           </button>
         </div>
-        {/* Nút chuyển đổi chế độ xem */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <span style={{ fontWeight: 500 }}>Chế độ xem:</span>
-          <button
-            onClick={() => setViewMode('grid')}
-            style={{
-              background: viewMode === 'grid' ? '#b59d3a' : '#fff',
-              color: viewMode === 'grid' ? '#fff' : '#b59d3a',
-              border: '1.5px solid #b59d3a',
-              borderRadius: 6,
-              padding: '6px 12px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontWeight: 600,
-            }}
-            title="Xem dạng lưới"
-          >
-            <FaTh /> Lưới
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            style={{
-              background: viewMode === 'table' ? '#b59d3a' : '#fff',
-              color: viewMode === 'table' ? '#fff' : '#b59d3a',
-              border: '1.5px solid #b59d3a',
-              borderRadius: 6,
-              padding: '6px 12px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontWeight: 600,
-            }}
-            title="Xem dạng bảng"
-          >
-            <FaTable /> Bảng
-          </button>
-        </div>
         {loading && <div>Đang tải dữ liệu...</div>}
-        {/* Luôn render danh sách khi không loading */}
-        {!loading && (
-          viewMode === 'grid' ? (
-            <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginTop: 24 }}>
-              {filteredChiTiet.map((ct) => (
+        {selectedSanPham && !loading && (
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginTop: 24 }}>
+            {filteredChiTiet.map((ct) => (
+              <div
+                key={ct.idChiTietSanPham}
+                style={{
+                  textAlign: "center",
+                  width: 170,
+                  minHeight: 210,
+                  background: "#fff",
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px #b59d3a11",
+                  padding: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  marginBottom: 12,
+                }}
+              >
+                {ct.duongDanHinhAnh ? (
+                  (() => {
+                    const fileName = ct.duongDanHinhAnh?.split("/").pop();
+                    return (
+                      <>
+                        <img
+                          src={`http://localhost:8080/hinh-anh/view/${fileName}`}
+                          alt={ct.tenSanPham}
+                          style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 8, border: "1px solid #eee" }}
+                        />
+                        <br />
+                        <button
+                          style={{ marginTop: 8, padding: "4px 12px", fontSize: 13, borderRadius: 6, border: "1px solid #b59d3a", background: "#fffbe6", color: "#b59d3a", cursor: "pointer" }}
+                          onClick={() => fileInputRefs.current[ct.idChiTietSanPham]?.click()}
+                        >
+                          Sửa ảnh
+                        </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          ref={el => { fileInputRefs.current[ct.idChiTietSanPham] = el; }}
+                          onChange={e => handleFileChange(e, ct)}
+                        />
+                      </>
+                    );
+                  })()
+                ) : (
+                  <>
+                    {/* <div style={{ width: 120, height: 120, background: "#f3f3f3", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", border: "1px solid #eee" }}>
+                      Không có ảnh
+                    </div> */}
+                  </>
+                )}
                 <div
-                  key={ct.idChiTietSanPham}
                   style={{
+                    marginTop: 8,
+                    fontSize: 14,
+                    minHeight: 36,
+                    maxWidth: 150,
+                    overflow: "hidden",
+                    wordBreak: "break-word",
                     textAlign: "center",
-                    width: 170,
-                    minHeight: 210,
-                    background: "#fff",
-                    borderRadius: 12,
-                    boxShadow: "0 2px 8px #b59d3a11",
-                    padding: 12,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
-                    marginBottom: 12,
                   }}
+                  title={`${ct.maSanPham} (${ct.tenSanPham})`}
                 >
-                  {ct.duongDanHinhAnh ? (
-                    (() => {
-                      const fileName = ct.duongDanHinhAnh?.split("/").pop();
-                      return (
-                        <>
-                          <img
-                            src={`http://localhost:8080/hinh-anh/view/${fileName}`}
-                            alt={ct.tenSanPham}
-                            style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 8, border: "1px solid #eee" }}
-                          />
-                          <br />
-                          <button
-                            style={{ marginTop: 8, padding: "4px 12px", fontSize: 13, borderRadius: 6, border: "1px solid #b59d3a", background: "#fffbe6", color: "#b59d3a", cursor: "pointer" }}
-                            onClick={() => fileInputRefs.current[ct.idChiTietSanPham]?.click()}
-                          >
-                            Sửa ảnh
-                          </button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: "none" }}
-                            ref={el => { fileInputRefs.current[ct.idChiTietSanPham] = el; }}
-                            onChange={e => handleFileChange(e, ct)}
-                          />
-                        </>
-                      );
-                    })()
-                  ) : (
-                    <></>
-                  )}
-                  <div
-                    style={{
-                      marginTop: 8,
-                      fontSize: 14,
-                      minHeight: 36,
-                      maxWidth: 150,
-                      overflow: "hidden",
-                      wordBreak: "break-word",
-                      textAlign: "center",
-                    }}
-                    title={`${ct.maSanPham} (${ct.tenSanPham})`}
-                  >
-                    {ct.maSanPham} ({ct.tenSanPham})
-                  </div>
+                  {ct.maSanPham} ({ct.tenSanPham})
                 </div>
-              ))}
-              {filteredChiTiet.length === 0 && <div>Không có chi tiết sản phẩm nào.</div>}
-            </div>
-          ) : (
-            <div style={{ marginTop: 24, overflowX: 'auto' }}>
-              <div style={{
-                background: '#fff',
-                borderRadius: 16,
-                boxShadow: '0 2px 12px #b59d3a22',
-                padding: 16,
-                maxWidth: '100%',
-                overflow: 'hidden',
-              }}>
-                <table style={{
-                  borderCollapse: 'separate',
-                  borderSpacing: 0,
-                  width: '100%',
-                  minWidth: 700,
-                  background: 'transparent',
-                  tableLayout: 'fixed',
-                }}>
-                  <thead>
-                    <tr>
-                        <th style={{ padding: '10px 8px', borderBottom: '1.5px solid', fontWeight: 700, width: 60, textAlign: 'center' }}>STT</th>
-                        <th style={{ padding: '10px 8px', borderBottom: '1.5px solid', fontWeight: 700, width: 100, textAlign: 'center' }}>Mã SP</th>
-                        <th style={{ padding: '10px 8px', borderBottom: '1.5px solid', fontWeight: 700, width: 260, textAlign: 'left' }}>Tên sản phẩm</th>
-                        <th style={{ padding: '10px 8px', borderBottom: '1.5px solid', fontWeight: 700, width: 90, textAlign: 'center' }}>Ảnh</th>
-                        <th style={{ padding: '10px 8px', borderBottom: '1.5px solid', fontWeight: 700, width: 90, textAlign: 'center' }}>Số lượng</th>
-                        <th style={{ height: 56, padding: '10px 8px', borderBottom: '1.5px solid', fontWeight: 700, width: 110, textAlign: 'center', verticalAlign: 'middle' }}>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredChiTiet.map((ct, idx) => (
-                      <tr key={ct.idChiTietSanPham} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>{idx + 1}</td>
-                        <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>{ct.maSanPham}</td>
-                        <td style={{ padding: '8px 6px', textAlign: 'left', verticalAlign: 'middle' }}>{ct.tenSanPham}</td>
-                        <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
-                          {ct.duongDanHinhAnh ? (
-                            (() => {
-                              const fileName = ct.duongDanHinhAnh?.split("/").pop();
-                              return (
-                                <img
-                                  src={`http://localhost:8080/hinh-anh/view/${fileName}`}
-                                  alt={ct.tenSanPham}
-                                  style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6, border: '1px solid #eee' }}
-                                />
-                              );
-                            })()
-                          ) : (
-                            <span style={{ color: '#aaa' }}>Không có ảnh</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>{ct.soLuong}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
-                          <button
-                            style={{
-                              background: '#FFD600',
-                              border: 'none',
-                              borderRadius: 8,
-                              width: 36,
-                              height: 36,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer',
-                              transition: 'box-shadow 0.2s',
-                              boxShadow: '0 2px 8px #b59d3a22',
-                            }}
-                            title="Sửa ảnh"
-                            onClick={() => fileInputRefs.current[ct.idChiTietSanPham]?.click()}
-                            onMouseOver={e => (e.currentTarget.style.boxShadow = '0 4px 16px #b59d3a33')}
-                            onMouseOut={e => (e.currentTarget.style.boxShadow = '0 2px 8px #b59d3a22')}
-                          >
-                            <FaEdit style={{ color: '#222', fontSize: 20 }} />
-                          </button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: "none" }}
-                            ref={el => { fileInputRefs.current[ct.idChiTietSanPham] = el; }}
-                            onChange={e => handleFileChange(e, ct)}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredChiTiet.length === 0 && (
-                      <tr>
-                        <td colSpan={6} style={{ padding: 24, color: '#888', textAlign: 'center', fontStyle: 'italic' }}>Không có dữ liệu hình ảnh.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
               </div>
-            </div>
-          )
+            ))}
+            {filteredChiTiet.length === 0 && <div>Không có chi tiết sản phẩm nào.</div>}
+          </div>
         )}
       </div>
     </AdminLayout>

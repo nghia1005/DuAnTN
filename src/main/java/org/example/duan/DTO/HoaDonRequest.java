@@ -1,31 +1,35 @@
 package org.example.duan.DTO;
 
-import lombok.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class HoaDonRequest {
-    private Long idKhachHang;
-    private Long idNhanVien;
-    private BigDecimal tongTien;
-    private BigDecimal giamGia;
-    private BigDecimal phiShip;
-    private BigDecimal thanhTien;
-    private String ghiChu;
-    private Long idPhieuGiamGia;
-    private List<HoaDonChiTietDTO> chiTiet;
+    public Integer idKhachHang;
+    public Integer idNhanVien;
+    public Integer idPhieuGiamGia;
+    public String loaiDon;
+    public BigDecimal tongTien;
+    public BigDecimal thanhTien;
+    public BigDecimal phiShip;
+    public String tenNguoiNhan;
+    public String soDienThoai;
+    public String email;
+    public String diaChiNhanHang;
+    public String ghiChu;
+    public String trangThai;
+    public List<ChiTiet> chiTiet;
+    public ThanhToan thanhToan;
 
-    // Bổ sung các trường giao hàng
-    private String tenNguoiNhan;
-    private String soDienThoai;
-    private String diaChiNhanHang;
-    private String email;
-    private String loaiDon;
-    // Thêm trường trạng thái hóa đơn
-    private String trangThai;
-
-    // Thêm getter/setter nếu không dùng Lombok hoặc để chắc chắn
-    public String getTrangThai() { return trangThai; }
-    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+    public static class ChiTiet {
+        public Integer idChiTietSanPham;
+        public Integer soLuong;
+        public BigDecimal donGia;
+        public BigDecimal thanhTien;
+    }
+    public static class ThanhToan {
+        public BigDecimal soTienThanhToan;
+        public String phuongThucThanhToan;
+        public String ghiChu;
+        public String trangThai;
+    }
 } 

@@ -5,14 +5,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import jakarta.persistence.Column;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import lombok.Setter;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import java.util.Date;
 @Setter
 @Getter
 @NoArgsConstructor
@@ -36,28 +38,16 @@ public class PhieuGiamGia {
     private BigDecimal giaTriToiDa;
     @Column(name = "soLuong")
     private Integer soLuong;
+    @Temporal(TemporalType.DATE)
     @Column(name = "ngayBatDau")
-    private LocalDateTime ngayBatDau;
+    private Date ngayBatDau;
+    @Temporal(TemporalType.DATE)
     @Column(name = "ngayKetThuc")
-    private LocalDateTime ngayKetThuc;
+    private Date ngayKetThuc;
     @Column(name = "moTa")
     private String moTa;
     @Column(name = "trangThai")
     private String trangThai;
     @Column(name = "phanTramGiamGia")
     private BigDecimal phanTramGiamGia;
-
-    public String getTrangThaiDong() {
-        java.util.Date now = new java.util.Date();
-        if (ngayBatDau != null && now.toInstant().isBefore(ngayBatDau.atZone(java.time.ZoneId.systemDefault()).toInstant())) {
-            return "Sắp diễn ra";
-        }
-        if (ngayBatDau != null && ngayKetThuc != null && !now.toInstant().isBefore(ngayBatDau.atZone(java.time.ZoneId.systemDefault()).toInstant()) && !now.toInstant().isAfter(ngayKetThuc.atZone(java.time.ZoneId.systemDefault()).toInstant())) {
-            return "Đang diễn ra";
-        }
-        if (ngayKetThuc != null && now.toInstant().isAfter(ngayKetThuc.atZone(java.time.ZoneId.systemDefault()).toInstant())) {
-            return "Đã kết thúc";
-        }
-        return "Không xác định";
-    }
 } 

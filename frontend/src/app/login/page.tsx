@@ -70,23 +70,121 @@ export default function LoginPage() {
         })
       });
       const result = await res.json();
+      console.log("FULL LOGIN RESPONSE:", result); // 👈 Thêm log toàn bộ kết quả trả về
+      // Sửa đoạn này để lấy user đúng chuẩn backend trả về
+      const user = result.data || result.user || result.taiKhoan || result.khachHang;
+      console.log("user login result:", user); // DEBUG
+      // Ép kiểu idVaiTro sang số nếu có
+      const idVaiTro = user?.idVaiTro !== undefined && user?.idVaiTro !== null ? Number(user.idVaiTro) : undefined;
+      console.log("DEBUG idVaiTro:", idVaiTro, typeof idVaiTro);
+      if (!user) {
+        setError("Phản hồi không hợp lệ từ máy chủ! (Thiếu thông tin tài khoản)");
+        setLoading(false);
+        return;
+      }
       if (result.success) {
-        // Lưu thông tin user vào localStorage
-        localStorage.setItem('user', JSON.stringify(result.data));
-        // Kiểm tra vai trò
-        if (result.data.vaiTro === "KHACH_HANG") {
-          setError("Bạn không có quyền truy cập trang này!");
-          setLoading(false);
-          localStorage.removeItem('user');
-          return;
+        // Chuẩn hóa vai trò
+        let vaiTro = user?.vaiTro || user?.role || user?.tenVaiTro || user?.roleName || "";
+        if (!vaiTro && typeof idVaiTro !== "undefined") {
+          if (idVaiTro === 1) vaiTro = "QUAN_TRI_VIEN";
+          else if (idVaiTro === 2) vaiTro = "NHAN_VIEN";
+          else if (idVaiTro === 3) vaiTro = "KHACH_HANG";
         }
-        setSuccess(true);
-        setTimeout(() => {
-          setFadeOut(true);
+        let userToSave = { ...user, vaiTro };
+        // Nếu là khách hàng thì lấy thêm thông tin chi tiết
+        if (idVaiTro === 3) {
+          let idKhachHang = user.idKhachHang;
+          // Nếu chưa có idKhachHang, tìm theo tên tài khoản
+          if (!idKhachHang && user.tenTaiKhoan) {
+            try {
+              const resSearch = await fetch(`http://localhost:8080/khach-hang/tim-kiem/ten/${encodeURIComponent(user.tenKhachHang || user.tenTaiKhoan)}`);
+              if (resSearch.ok) {
+                const searchData = await resSearch.json();
+                // searchData có thể là mảng, lấy phần tử đầu tiên
+                if (Array.isArray(searchData) && searchData.length > 0) {
+                  idKhachHang = searchData[0].idKhachHang;
+                } else if (searchData && searchData.idKhachHang) {
+                  idKhachHang = searchData.idKhachHang;
+                }
+              }
+            } catch (err) {}
+          }
+          if (idKhachHang) {
+            try {
+              const resDetail = await fetch(`http://localhost:8080/khach-hang/chi-tiet/${idKhachHang}`);
+              if (resDetail.ok) {
+                const fullUser = await resDetail.json();
+                const detail = fullUser.data || fullUser;
+                userToSave = { ...detail, vaiTro };
+              }
+            } catch (err) {}
+          }
+        }
+        localStorage.setItem('user', JSON.stringify(userToSave));
+        // Phân quyền chuyển hướng
+        if (typeof idVaiTro !== 'undefined' && idVaiTro !== null) {
+          if (idVaiTro === 3) {
+            setSuccess(true);
+            setTimeout(() => {
+              setFadeOut(true);
+              setTimeout(() => {
+                router.push('/shop');
+              }, 500);
+            }, 1200);
+            return;
+          } else if (idVaiTro === 1 || idVaiTro === 2) {
+            setSuccess(true);
+            setTimeout(() => {
+              setFadeOut(true);
+              setTimeout(() => {
+                router.push('/dashboard');
+              }, 500);
+            }, 1200);
+            return;
+          } else {
+            setSuccess(true);
+            setTimeout(() => {
+              setFadeOut(true);
+              setTimeout(() => {
+                router.push('/dashboard');
+              }, 500);
+            }, 1200);
+            return;
+          }
+        }
+        // Nếu không có idVaiTro thì fallback kiểm tra role như cũ
+        const rawRole = user?.role || user?.vaiTro || user?.tenVaiTro || user?.roleName || '';
+        const role = rawRole
+          .toUpperCase()
+          .normalize('NFD').replace(/[  - 6f]/g, '')
+          .replace(/\s/g, '')
+          .replace('KHACHHANG', 'KHACH_HANG');
+        if (role === 'KHACH_HANG') {
+          setSuccess(true);
           setTimeout(() => {
-            router.push("/dashboard");
-          }, 500);
-        }, 1200);
+            setFadeOut(true);
+            setTimeout(() => {
+              router.push('/shop');
+            }, 500);
+          }, 1200);
+        } else if (role === 'NHAN_VIEN' || role === 'QUAN_TRI_VIEN') {
+          setSuccess(true);
+          setTimeout(() => {
+            setFadeOut(true);
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 500);
+          }, 1200);
+        } else {
+          setSuccess(true);
+          setTimeout(() => {
+            setFadeOut(true);
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 500);
+          }, 1200);
+        }
+        return;
       } else {
         setFailCount(f => f + 1);
         setError(result.message || "Đăng nhập thất bại!");
@@ -214,7 +312,7 @@ export default function LoginPage() {
         </div>
         <div className={styles.loginRight}>
           <img
-            src="/logo-login.png"
+            src="/logo.jpg"
             alt="SoleKingStore Logo"
             className={styles.logoImg}
           />

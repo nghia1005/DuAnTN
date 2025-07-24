@@ -2,11 +2,10 @@ package org.example.duan.Service;
 
 import org.example.duan.Repository.NhanVienRepository;
 import org.example.duan.Repository.TaiKhoanRepository;
-import org.example.duan.Repository.VaiTroRepository;
+//import org.example.duan.Repository.VaiTroRepository;
+import org.example.duan.DTO.NhanVienDTO;
 import org.example.duan.Entity.NhanVien;
 import org.example.duan.Entity.TaiKhoan;
-import org.example.duan.Entity.VaiTro;
-import org.example.duan.DTO.NhanVienDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,8 +33,8 @@ public class NhanVienService {
     @Autowired
     private TaiKhoanRepository taiKhoanRepository;
 
-    @Autowired
-    private VaiTroRepository vaiTroRepository;
+//    @Autowired
+//    private VaiTroRepository vaiTroRepository;
 
     @Autowired
     private EmailService emailService;
@@ -123,12 +122,6 @@ public class NhanVienService {
             taiKhoan.setTenTaiKhoan(username);
             taiKhoan.setMatKhau(password); // Nên mã hóa nếu có PasswordEncoder
             taiKhoan.setTrangThai("Hoạt động");
-            // Gán vai trò mặc định là NHAN_VIEN
-            VaiTro vaiTro = vaiTroRepository.findAll().stream()
-                .filter(v -> v.getTenVaiTro().equalsIgnoreCase("NHAN_VIEN"))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò NHAN_VIEN"));
-            taiKhoan.setVaiTro(vaiTro);
             taiKhoan = taiKhoanRepository.save(taiKhoan);
 
             // 4. Tạo nhân viên

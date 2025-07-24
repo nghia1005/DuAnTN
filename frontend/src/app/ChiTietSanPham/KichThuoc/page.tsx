@@ -11,7 +11,6 @@ interface ChiTietSanPham {
   idSanPham: number;
   idKichCo: number;
   tenKichCo: string;
-  soLuong: number;
 }
 interface KichCo { idKichCo: number; kichCo: string; }
 
@@ -159,22 +158,13 @@ export default function KichThuocPage() {
                 <th style={{ padding: 10, textAlign: 'left', borderBottom: '2px solid' }}>Mã sản phẩm</th>
                 <th style={{ padding: 10, textAlign: 'left', borderBottom: '2px solid' }}>Tên sản phẩm</th>
                 <th style={{ padding: 10, textAlign: 'left', borderBottom: '2px solid' }}>Kích thước</th>
-                <th style={{ padding: 10, textAlign: 'center', borderBottom: '2px solid' }}>Số lượng</th>
-                <th
-                  style={{
-                    height: 56,
-                    textAlign: 'center',
-                    borderBottom: '2px solid',
-                  }}
-                >
-                  Thao tác
-                </th>
+                <th style={{ padding: 10, textAlign: 'center', borderBottom: '2px solid' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {filteredChiTiet.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#b59d3a' }}>Không có dữ liệu kích thước.</td>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: 24, color: '#b59d3a' }}>Không có dữ liệu kích thước.</td>
                 </tr>
               ) : (
                 filteredChiTiet.map((ct, idx) => (
@@ -183,17 +173,7 @@ export default function KichThuocPage() {
                     <td style={{ padding: 10 }}>{ct.maSanPham}</td>
                     <td style={{ padding: 10 }}>{ct.tenSanPham}</td>
                     <td style={{ padding: 10 }}>{ct.tenKichCo}</td>
-                    <td style={{ padding: 10, textAlign: 'center', verticalAlign: 'middle' }}>{ct.soLuong}</td>
-                    <td
-                      style={{
-                        height: 56,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        textAlign: 'center',
-                        verticalAlign: 'middle',
-                      }}
-                    >
+                    <td style={{ padding: 10, textAlign: 'center' }}>
                       <button
                         onClick={() => handleEdit(ct)}
                         style={{
@@ -276,6 +256,7 @@ export default function KichThuocPage() {
                       setAddKichCoValue(val);
                     }
                   }}
+                  placeholder="Nhập kích thước mới"
                   style={{
                     padding: 8,
                     minWidth: 180,

@@ -138,8 +138,9 @@ export default function ThemNhanVienPage() {
             if (data.success) {
                 setSuccessToast("Thêm nhân viên thành công!");
                 setTimeout(() => {
-                    window.location.href = "/NhanVien/HienThi";
-                }, 800);
+                    localStorage.removeItem('token');
+                    window.location.href = "/login";
+                }, 400);
             } else {
                 if (data.message && data.message.toLowerCase().includes('số điện thoại')) {
                     setAddError(prev => ({ ...prev, soDienThoai: data.message }));

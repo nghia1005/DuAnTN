@@ -140,34 +140,38 @@ export default function NhanVienPage() {
                     <h2 style={{ color: "#333", fontWeight: 700, marginBottom: 24, fontSize: "1.5rem" }}>
                         Danh sách nhân viên
                     </h2>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 32, flexWrap: 'nowrap', overflowX: 'auto' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, paddingBottom: 32 }}>
+                        {/* Tìm kiếm + Làm mới bên trái */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <input
                                 type="text"
                                 placeholder="Tìm kiếm nhân viên..."
                                 value={searchValue}
                                 onChange={e => setSearchValue(e.target.value)}
-                                style={{ padding: 9, borderRadius: 7, border: "1.5px solid #b59d3a55", minWidth: 160, fontSize: 15, background: '#fff', color: '#222', flex: '1 1 160px', maxWidth: 220 }}
+                                style={{ padding: 9, borderRadius: 7, border: "1.5px solid #b59d3a55", minWidth: 220, fontSize: 15, background: '#fff', color: '#222' }}
                                 onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
                             />
                             <button
-                                style={{ background: "#fff", color: "#b59d3a", border: "1.5px solid #b59d3a55", borderRadius: 7, padding: "9px 10px", fontWeight: 600, fontSize: 15, cursor: "pointer", display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}
+                                style={{ background: "#fff", color: "#b59d3a", border: "1.5px solid #b59d3a55", borderRadius: 7, padding: "9px 18px", fontWeight: 600, fontSize: 15, cursor: "pointer", display: 'flex', alignItems: 'center', gap: 7 }}
                                 onClick={handleSearch}
                             >
                                 <FaSearch style={{ fontSize: 16 }} />
                                 Tìm kiếm
                             </button>
                             <button
-                                style={{ background: "#fff", color: "#b59d3a", border: "1.5px solid #b59d3a55", borderRadius: 7, padding: "9px 10px", fontWeight: 600, fontSize: 15, cursor: "pointer", display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}
+                                style={{ background: "#fff", color: "#b59d3a", border: "1.5px solid #b59d3a55", borderRadius: 7, padding: "9px 14px", fontWeight: 600, fontSize: 15, cursor: "pointer", display: 'flex', alignItems: 'center', gap: 7 }}
                                 onClick={() => { setSearchValue(""); fetchNhanViens(); }}
                             >
                                 <FaSyncAlt style={{ fontSize: 16 }} />
                                 Làm mới
                             </button>
+                        </div>
+                        {/* Bộ lọc ở giữa */}
+                        <div style={{ display: "flex", gap: 16 }}>
                             <select 
                                 value={filterTrangThai} 
                                 onChange={e => setFilterTrangThai(e.target.value)} 
-                                style={{ padding: 8, borderRadius: 7, border: "1.5px solid #b59d3a55", width: 180, background: '#fff', color: '#222' }}
+                                style={{ padding: 8, borderRadius: 7, border: "1.5px solid #b59d3a55", minWidth: 150, background: '#fff', color: '#222' }}
                             >
                                 <option value="">-- Tất cả trạng thái --</option>
                                 <option value="Hoạt động">Hoạt động</option>
@@ -176,22 +180,21 @@ export default function NhanVienPage() {
                             <select
                                 value={filterGioiTinh}
                                 onChange={e => setFilterGioiTinh(e.target.value)}
-                                style={{ padding: 8, borderRadius: 7, border: "1.5px solid #b59d3a55", width: 180, background: '#fff', color: '#222' }}
+                                style={{ padding: 8, borderRadius: 7, border: "1.5px solid #b59d3a55", minWidth: 150, background: '#fff', color: '#222' }}
                             >
                                 <option value="">-- Tất cả giới tính --</option>
                                 <option value="true">Nam</option>
                                 <option value="false">Nữ</option>
                             </select>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <Link href="/NhanVien/ThemNhanVien">
-                                <button
-                                    style={{ background: "#b59d3a", color: "#fff", border: "none", borderRadius: 7, padding: "8px 18px", fontWeight: 600, fontSize: 16, height: 40, cursor: "pointer", boxShadow: "0 2px 8px #b59d3a22", flexShrink: 0, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
-                                >
-                                    + Thêm nhân viên
-                                </button>
-                            </Link>
-                        </div>
+                        {/* Thêm nhân viên bên phải */}
+                        <Link href="/NhanVien/ThemNhanVien">
+                            <button
+                                style={{ background: "#b59d3a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 22px", fontWeight: 600, fontSize: 16, cursor: "pointer", boxShadow: "0 2px 8px #b59d3a22" }}
+                            >
+                                + Thêm nhân viên
+                            </button>
+                        </Link>
                     </div>
                 </div>
 

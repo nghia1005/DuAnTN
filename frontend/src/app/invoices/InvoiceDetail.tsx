@@ -15,10 +15,6 @@ interface InvoiceDetailProps {
             soLuong: number;
             donGia: number;
             thanhTien: number;
-            danhMuc?: string;
-            thuongHieu?: string;
-            mauSac?: string;
-            kichCo?: string;
         }[];
     };
     onCloseAction: () => void;
@@ -36,18 +32,11 @@ export default function InvoiceDetail({ invoice, onCloseAction }: InvoiceDetailP
         <div className="invoice-detail-modal">
             <div className="modal-overlay" onClick={onCloseAction}></div>
             <div className="modal-content">
-                <div className="modal-header" style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid #e0e0e0', paddingBottom: 12 }}>
-                    <img src="/soleking-logo.png" alt="SoleKing Store Logo" style={{ width: 80, height: 80, objectFit: 'contain', background: '#fff', borderRadius: 8, border: '1px solid #eee' }} />
-                    <div style={{ flex: 1 }}>
-                        <h2 style={{ margin: 0, color: '#b8860b', fontFamily: 'inherit', fontWeight: 800, letterSpacing: 1 }}>SoleKing Store</h2>
-                        <div style={{ fontWeight: 'bold', color: '#333', fontSize: 16 }}>Shop bán giày sneaker</div>
-                        <div style={{ color: '#555', fontSize: 15 }}>Địa chỉ: 13 P. Trịnh Văn Bô, Xuân Phương, Nam Từ Liêm, Hà Nội, Việt Nam</div>
-                        <div style={{ color: '#555', fontSize: 15 }}>Điện thoại: 0365175821</div>
-                    </div>
+                <div className="modal-header">
+                    <h3>Chi tiết hóa đơn {invoice.maHoaDon}</h3>
                     <button className="close-btn" onClick={onCloseAction}>×</button>
                 </div>
-                <h3 style={{ textAlign: 'center', margin: '18px 0 8px 0', color: '#2c3e50', fontWeight: 700, letterSpacing: 1 }}>HÓA ĐƠN BÁN LẺ</h3>
-
+                
                 {!invoice || !invoice.idHoaDon ? (
                     <div style={{color: 'red', padding: 24}}>Không có dữ liệu hóa đơn!</div>
                 ) : (
@@ -79,42 +68,35 @@ export default function InvoiceDetail({ invoice, onCloseAction }: InvoiceDetailP
                                 <span className="label">Tổng tiền:</span>
                                 <span className="value amount">{formatCurrency(invoice.tongTien)}</span>
                             </div>
-                            <div className="info-row">
-                                <span className="label">Người đại diện:</span>
-                                <span className="value">Nhóm SD-81</span>
-                            </div>
                         </div>
 
                         <div className="invoice-items">
                             <h4>Chi tiết sản phẩm</h4>
-                            <div className="items-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>STT</th>
-                                            <th>TÊN HÀNG</th>
-                                            <th>Số Lượng</th>
-                                            <th>Đơn Giá</th>
-                                            <th>Thành Tiền</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {(invoice.chiTiet || []).map((item, idx) => (
-                                            <tr key={idx}>
-                                                <td style={{ textAlign: 'center', fontWeight: 500 }}>{idx + 1}</td>
-                                                <td>
-                                                    <b>{item.tenSanPham}</b>
-                                                    <div style={{ color: '#555', fontSize: 14 }}>
-                                                        {item.danhMuc}, {item.thuongHieu}, Màu {item.mauSac}, Kích cỡ {item.kichCo}
-                                                    </div>
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>{item.soLuong}</td>
-                                                <td>{formatCurrency(item.donGia)}</td>
-                                                <td>{formatCurrency(item.thanhTien)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="items-list" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                {/* Giả sử invoice.items là mảng sản phẩm, nếu chưa có thì bạn cần truyền vào props */}
+                                {(invoice.chiTiet || []).map((item, idx) => (
+                                    <div key={idx} style={{
+                                        border: '1px solid #eee',
+                                        borderRadius: 8,
+                                        padding: 16,
+                                        background: '#fff',
+                                        boxShadow: '0 1px 4px #eee',
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: 24,
+                                        alignItems: 'flex-start',
+                                    }}>
+                                        <div style={{ minWidth: 180, flex: 2 }}>
+                                            <div><b>STT:</b> {idx + 1}</div>
+                                            <div><b>Tên sản phẩm:</b> {item.tenSanPham}</div>
+                                        </div>
+                                        <div style={{ minWidth: 120, flex: 1 }}>
+                                            <div><b>Số lượng:</b> {item.soLuong}</div>
+                                            <div><b>Đơn giá:</b> {formatCurrency(item.donGia)}</div>
+                                            <div><b>Thành tiền:</b> {formatCurrency(item.thanhTien)}</div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

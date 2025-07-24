@@ -83,19 +83,16 @@ public class VoucherService {
 
     public PhieuGiamGia toggleStatus(Long id) {
         PhieuGiamGia existing = repo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu giảm giá"));
-        java.util.Date now = new java.util.Date();
-        boolean isExpired = existing.getNgayKetThuc() != null && now.toInstant().isAfter(existing.getNgayKetThuc().atZone(java.time.ZoneId.systemDefault()).toInstant());
-        if (isExpired) {
-            throw new RuntimeException("Voucher đã hết hạn, không thể bật lại!");
-        }
         String currentStatus = existing.getTrangThai();
-        if (currentStatus != null && (currentStatus.equalsIgnoreCase("Đang diễn ra") || currentStatus.equalsIgnoreCase("Hoạt động") || currentStatus.equalsIgnoreCase("Còn hiệu lực"))) {
-            existing.setTrangThai("Tạm ngưng");
-        } else if (currentStatus != null && currentStatus.equalsIgnoreCase("Tạm ngưng")) {
-            existing.setTrangThai("Đang diễn ra");
+        if (currentStatus != null && (
+            currentStatus.equalsIgnoreCase("Hoạt động") ||
+            currentStatus.equalsIgnoreCase("Còn hiệu lực") ||
+            currentStatus.equalsIgnoreCase("hoạt động") ||
+            currentStatus.equalsIgnoreCase("ho?t d?ng")
+        )) {
+            existing.setTrangThai("Ngừng hoạt động");
         } else {
-            // Nếu trạng thái khác, mặc định chuyển sang Tạm ngưng
-            existing.setTrangThai("Tạm ngưng");
+            existing.setTrangThai("Hoạt động");
         }
         return repo.save(existing);
     }

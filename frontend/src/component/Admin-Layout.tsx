@@ -6,7 +6,7 @@ import { FiLogOut } from "react-icons/fi";
 import { useEffect } from "react";
 
 const menuItems = [
-    { id: "dashboard", label: "Tổng quan", icon: "🏠" },
+    { id: "dashboard", label: "Trang chủ", icon: "🏠" },
     { id: "pos", label: "Bán hàng tại quầy", icon: "💳" },
     {
         id: "products",
@@ -23,16 +23,16 @@ const menuItems = [
     },
     { id: "employees", label: "Quản lý nhân viên", icon: "👤" },
     { id: "customers", label: "Quản lý khách hàng", icon: "👥" },
-    { id: "invoices", label: "Hóa đơn", icon: "🧾" },
     {
-        id: "statistics",
-        label: "Thống kê",
-        icon: "📊",
+        id: "invoices",
+        label: "Hóa đơn",
+        icon: "🧾",
         children: [
-            { id: "revenue-statistics", label: "Doanh thu", route: "/ThongKe/DoanhThu" },
-            { id: "product-statistics", label: "Sản phẩm", route: "/ThongKe/SanPham" }
+            { id: "counter-invoice", label: "Hóa đơn tại quầy", route: "/invoices/counter" },
+            { id: "online-invoice", label: "Hóa đơn online", route: "/invoices/online" }
         ]
     },
+    { id: "statistics", label: "Thống kê", icon: "📊" },
     { id: "promotions", label: "Khuyến mãi", icon: "🎉" }
 ];
 
@@ -44,10 +44,8 @@ interface AdminLayoutProps {
     activeSubMenu?: string;
 }
 
-export default function AdminLayout({ children, pageTitle, activeSubMenu }: AdminLayoutProps) {
+export default function AdminLayout({ children, pageTitle, activeSubMenu, onMenuChangeAction }: AdminLayoutProps) {
     const [collapsed, setCollapsed] = useState(false);
-    const [productMenuOpen, setProductMenuOpen] = useState(false);
-    const [statisticsMenuOpen, setStatisticsMenuOpen] = useState(false);
     const [user, setUser] = useState<{
         tenTaiKhoan?: string;
         tenNhanVien?: string;
@@ -56,6 +54,7 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
     } | null>(null);
     const router = useRouter();
     const pathname = usePathname();
+    const [openInvoices, setOpenInvoices] = useState(false);
 
     // Kiểm tra quyền truy cập: chỉ cho phép NHAN_VIEN hoặc QUAN_TRI_VIEN
     useEffect(() => {
@@ -74,6 +73,13 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
         }
     }, [router]);
 
+    // Tự động mở menu con nếu đang ở trang con của invoices
+    useEffect(() => {
+        if (pathname.startsWith("/invoices")) {
+            setOpenInvoices(true);
+        }
+    }, [pathname]);
+
     // Xác định menu đang active dựa vào pathname
     const getActiveMenu = () => {
         if (pathname.startsWith("/invoices")) return "invoices";
@@ -83,24 +89,11 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
         if (pathname.startsWith("/KhachHang")) return "customers";
         if (pathname.startsWith("/ThongKe")) return "statistics";
         if (pathname.startsWith("/ChiTietSanPham")) return "products";
-        if (pathname.startsWith("/Voucher")) return "promotions";
+        if (pathname.startsWith("/voucher")) return "promotions";
         // ... các case khác nếu cần
         return "dashboard";
     };
     const activeMenu = getActiveMenu();
-
-    // Tự động mở menu con khi vào trang con
-    useEffect(() => {
-        if (pathname.startsWith("/ThongKe/DoanhThu") || pathname.startsWith("/ThongKe/SanPham")) {
-            setStatisticsMenuOpen(true);
-        } else if (pathname === "/ThongKe/DoanhThu") {
-            // Nếu vào trang chính Thống kê thì đóng menu con
-            setStatisticsMenuOpen(false);
-        }
-        if (pathname.startsWith("/ChiTietSanPham")) {
-            setProductMenuOpen(true);
-        }
-    }, [pathname]);
 
     const handleLogout = () => {
         localStorage.removeItem("user");
@@ -108,40 +101,48 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
     };
 
     const handleMenuClick = (menuId: string) => {
-        if (menuId === "dashboard") {
-            router.push("/dashboard");
-        } else if (menuId === "pos") {
-            router.push("/pos");
-        } else if (menuId === "employees") {
-            router.push("/NhanVien/HienThi");
-        } else if (menuId === "customers") {
-            router.push("/KhachHang");
-        } else if (menuId === "statistics") {
-            setStatisticsMenuOpen(open => !open);
-            // Nếu đang ở menu khác thì chuyển route sang /ThongKe/DoanhThu
-            if (activeMenu !== "statistics") {
-                router.push("/ThongKe/DoanhThu");
-            }
-            return;
-        } else if (menuId === "products") {
-            setProductMenuOpen(open => !open);
-            // Nếu đang ở menu khác thì chuyển route sang /ChiTietSanPham
-            if (activeMenu !== "products") {
-                router.push("/ChiTietSanPham");
-            }
-            return;
-        } else if (menuId === "invoices") {
-            router.push("/invoices");
-            return;
-        } else if (menuId === "promotions") {
-            router.push("/Voucher/HienThi");
-            return;
+        switch (menuId) {
+            case "dashboard":
+                router.push("/dashboard");
+                break;
+            case "pos":
+                router.push("/pos");
+                break;
+            case "employees":
+                router.push("/NhanVien/HienThi");
+                break;
+            case "customers":
+                router.push("/KhachHang");
+                break;
+            case "statistics":
+                router.push("/ThongKe");
+                break;
+            case "products":
+                // Không toggle productMenuOpen nữa, chỉ chuyển route nếu cần
+                // Nếu đang ở menu products thì không làm gì
+                if (activeMenu !== "products") {
+                    router.push("/ChiTietSanPham");
+                }
+                return;
+            case "invoices":
+                setOpenInvoices((prev) => !prev);
+                break;
+            case "promotions":
+                router.push("/voucher");
+                break;
+            case "counter-invoice":
+            case "online-invoice":
+                // Gọi callback nếu có, không chuyển route
+                if (typeof onMenuChangeAction === 'function') {
+                    onMenuChangeAction(menuId);
+                }
+                return;
         }
     };
 
-    // Menu con chỉ mở nếu productMenuOpen true
-    const shouldOpenProductMenu = productMenuOpen;
-    const shouldOpenStatisticsMenu = statisticsMenuOpen;
+    // Menu con chỉ mở nếu đang ở menu products
+    const shouldOpenProductMenu = activeMenu === "products";
+    const shouldOpenInvoiceMenu = activeMenu === "invoices";
 
     return (
         <div style={{ minHeight: "100vh", background: "#fffbe6", display: "flex" }}>
@@ -168,11 +169,11 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
                     }}
                 >
                     <img
-                        src="/logo-login.png"
+                        src="/logo.jpg"
                         alt="Logo"
                         style={{
-                            width: collapsed ? 35 : 45,
-                            height: collapsed ? 35 : 45,
+                            width: collapsed ? 32 : 38,
+                            height: collapsed ? 32 : 38,
                             objectFit: "contain",
                             borderRadius: 12,
                             background: "#fffbe6",
@@ -230,17 +231,15 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
                                 <span style={{ fontSize: 22 }}>{item.icon}</span>
                                 {!collapsed && <span>{item.label}</span>}
                                 {item.children && !collapsed && (
-                                    <span style={{ marginLeft: "auto", fontSize: 16 }}>
-                                        {(item.id === "products" && shouldOpenProductMenu) || (item.id === "statistics" && shouldOpenStatisticsMenu) ? "▼" : "▶"}
-                                    </span>
+                                    <span style={{ marginLeft: "auto", fontSize: 16 }}>{activeMenu === "products" ? "▼" : "▶"}</span>
                                 )}
                             </button>
-                            {item.children && ((item.id === "products" && shouldOpenProductMenu) || (item.id === "statistics" && shouldOpenStatisticsMenu)) && !collapsed && (
+                            {item.children && item.id === "invoices" && (openInvoices || pathname.startsWith("/invoices")) && !collapsed && (
                                 <div style={{
                                     marginLeft: 24,
                                     borderLeft: "2px solid #f3e9c7",
                                     background: "#fffbe6",
-                                    borderRadius: "14px",   
+                                    borderRadius: "14px",
                                     boxShadow: "0 2px 8px #b59d3a22",
                                     overflow: "hidden"
                                 }}>
@@ -259,10 +258,14 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
                                                 textAlign: "left"
                                             }}
                                             onClick={() => {
-                                                if (child.route && child.route !== "#") {
-                                                    router.push(child.route);
+                                                if (pathname === "/invoices") {
+                                                    if (typeof onMenuChangeAction === 'function') {
+                                                        onMenuChangeAction(child.id);
+                                                    }
+                                                } else {
+                                                    router.push("/invoices");
                                                 }
-                                                // Không cần gọi onMenuChangeAction nữa
+                                                setOpenInvoices(true);
                                             }}
                                         >
                                             {child.label}
@@ -298,7 +301,7 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
                     </button>
                 </div>
             </nav>
-            
+
             {/* Main content */}
             <div style={{ flex: 1 }}>
                 {/* Header */}
@@ -334,19 +337,13 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
                                 {(user.tenTaiKhoan ? user.tenTaiKhoan.charAt(0).toUpperCase() : (user.tenNhanVien ? user.tenNhanVien.charAt(0).toUpperCase() : (user.tenKhachHang ? user.tenKhachHang.charAt(0).toUpperCase() : "U")))}
                             </div>
                             <div style={{ display: "flex", flexDirection: "column" }}>
-                                <span style={{ fontWeight: 600, color: "#b59d3a" }}>
-                                    {user.tenNhanVien || user.tenTaiKhoan || user.tenKhachHang || "Tài khoản"}
-                                </span>
-                                {user.vaiTro && (
-                                    <span style={{ fontWeight: 500, color: "#8a7a2a", fontSize: 13 }}>
-                                        {user.vaiTro === "NHAN_VIEN" ? "Nhân viên" : user.vaiTro === "QUAN_TRI_VIEN" ? "Quản trị viên" : user.vaiTro}
-                                    </span>
-                                )}
+                                <span style={{ fontWeight: 600, color: "#b59d3a" }}>{user.tenTaiKhoan || user.tenNhanVien || user.tenKhachHang || "Tài khoản"}</span>
+                                {/* Có thể hiển thị vai trò hoặc thông tin khác nếu muốn */}
                             </div>
                         </div>
                     )}
                 </header>
-                
+
                 {/* Content area */}
                 <div style={{ padding: 32 }}>
                     {children}
@@ -355,4 +352,3 @@ export default function AdminLayout({ children, pageTitle, activeSubMenu }: Admi
         </div>
     );
 }
-

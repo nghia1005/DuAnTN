@@ -45,19 +45,11 @@ export default function ProductDetailTable() {
   const [details, setDetails] = useState<ProductDetail[]>([]);
   const [pageLoading, setPageLoading] = useState(false);
   const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // State cho modal chi tiết
   const [openDetail, setOpenDetail] = useState(false);
-  const [detailData, setDetailData] = useState<{
-    bienThe: ProductDetail[];
-    maSanPham: string;
-    tenSanPham: string;
-    tenThuongHieu: string;
-    tenDanhMuc: string;
-    moTa: string;
-    tongSoLuong: number;
-    trangThai: string;
-  } | null>(null);
+  const [detailData, setDetailData] = useState<ProductDetail|null>(null);
 
   // State cho modal sửa
   const [editDetail, setEditDetail] = useState<ProductDetail|null>(null);
@@ -179,6 +171,7 @@ export default function ProductDetailTable() {
           // Sắp xếp giảm dần theo idChiTietSanPham (mới nhất lên đầu)
           data.sort((a: ProductDetail, b: ProductDetail) => b.idChiTietSanPham - a.idChiTietSanPham);
           setDetails(data);
+          setTotalPages(1); // Cập nhật lại nếu có phân trang
         })
         .finally(() => setPageLoading(false));
   }, []);
@@ -186,8 +179,6 @@ export default function ProductDetailTable() {
   // Filter logic
   const filteredDetails = details.filter(detail => {
     const search = searchTerm.trim().toLowerCase();
-    // Xác định trạng thái hiển thị thực tế
-    const trangThaiHienThi = Number(detail.soLuong) === 0 ? 'Hết hàng' : detail.trangThai;
     return (
         (!search ||
             detail.maSanPham?.toLowerCase().includes(search) ||
@@ -198,13 +189,19 @@ export default function ProductDetailTable() {
         (!filterCategory || detail.tenDanhMuc === filterCategory) &&
         (!filterColor || detail.tenMauSac === filterColor) &&
         (!filterSize || detail.tenKichCo === filterSize) &&
-        (!filterStatus || trangThaiHienThi === filterStatus)
+        (!filterStatus || detail.trangThai === filterStatus)
     );
   });
 
-  // Use the single pageSize variable
   const pageSize = 10;
   const pagedDetails = filteredDetails.slice(page * pageSize, (page + 1) * pageSize);
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(filteredDetails.length / pageSize));
+    if (page > 0 && page >= Math.ceil(filteredDetails.length / pageSize)) {
+      setPage(0); // reset về trang đầu nếu dữ liệu bị lọc ít lại
+    }
+  }, [filteredDetails]);
 
   // Khi đổi filter/search thì về trang đầu
   useEffect(() => {
@@ -549,7 +546,7 @@ export default function ProductDetailTable() {
   const handleSaveEdit = async () => {
     try {
       setEditLoading(true);
-
+      
       // Validate form trước khi lưu
       const validationError = validateEditForm();
       if (validationError) {
@@ -567,13 +564,13 @@ export default function ProductDetailTable() {
           idThuongHieu: editForm.idThuongHieu,
           trangThai: editForm.trangThai
         };
-
+        
         const sanPhamRes = await fetch(`http://localhost:8080/san-pham/sua/${editForm.idSanPham}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(sanPhamUpdateData)
         });
-
+        
         if (!sanPhamRes.ok) {
           const sanPhamError = await sanPhamRes.json();
           setSnackbar({ open: true, message: sanPhamError.message || 'Lỗi khi cập nhật sản phẩm!', severity: 'error' });
@@ -581,15 +578,14 @@ export default function ProductDetailTable() {
         }
       }
 
-      // Nếu số lượng = 0 thì trạng thái = 'Hết hàng'
-      let trangThaiUpdate = Number(editForm.soLuong) === 0 ? 'Hết hàng' : editForm.trangThai;
+      // Sau đó cập nhật chi tiết sản phẩm
       const chiTietUpdateData = {
         idSanPham: editForm.idSanPham,
         idMauSac: editForm.idMauSac,
         idKichCo: editForm.idKichCo,
         soLuong: editForm.soLuong,
         gia: editForm.gia,
-        trangThai: trangThaiUpdate,
+        trangThai: editForm.trangThai,
         idHinhAnh: editForm.idHinhAnh
       };
 
@@ -598,28 +594,28 @@ export default function ProductDetailTable() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chiTietUpdateData)
       });
-
+      
       const data = await res.json();
-      if (res.ok) {
-        setSnackbar({ open: true, message: 'Lưu thành công!', severity: 'success' });
-
-        // Cập nhật lại toàn bộ danh sách để đảm bảo hiển thị đúng
-        // Đặc biệt quan trọng khi sửa mô tả vì mô tả thuộc về sản phẩm cha
-        const refreshRes = await fetch('http://localhost:8080/chi-tiet-san-pham/hien-thi');
-        const refreshData = await refreshRes.json();
-        refreshData.sort((a: ProductDetail, b: ProductDetail) => b.idChiTietSanPham - a.idChiTietSanPham);
-        setDetails(refreshData);
-
-        setEditDetail(null);
-      } else {
+              if (res.ok) {
+          setSnackbar({ open: true, message: 'Lưu thành công!', severity: 'success' });
+          
+          // Cập nhật lại toàn bộ danh sách để đảm bảo hiển thị đúng
+          // Đặc biệt quan trọng khi sửa mô tả vì mô tả thuộc về sản phẩm cha
+          const refreshRes = await fetch('http://localhost:8080/chi-tiet-san-pham/hien-thi');
+          const refreshData = await refreshRes.json();
+          refreshData.sort((a: ProductDetail, b: ProductDetail) => b.idChiTietSanPham - a.idChiTietSanPham);
+          setDetails(refreshData);
+          
+          setEditDetail(null);
+        } else {
         setSnackbar({ open: true, message: data.message || 'Lỗi khi lưu!', severity: 'error' });
       }
-    } catch (err) {
-      setSnackbar({ open: true, message: 'Lỗi khi lưu!', severity: 'error' });
-    } finally {
-      setEditLoading(false);
-    }
-  };
+            } catch (err) {
+          setSnackbar({ open: true, message: 'Lỗi khi lưu!', severity: 'error' });
+        } finally {
+          setEditLoading(false);
+        }
+      };
 
   const handleAddAll = async () => {
     // Validate form trước khi thêm
@@ -634,7 +630,7 @@ export default function ProductDetailTable() {
       setSnackbar({ open: true, message: 'Vui lòng tạo ít nhất một biến thể!', severity: 'error' });
       return;
     }
-
+    
     let idSanPham = addIdSanPham;
     // Nếu đang tạo mới sản phẩm cha
     if (!idSanPham) {
@@ -658,11 +654,10 @@ export default function ProductDetailTable() {
       }
       idSanPham = String(data.idSanPham);
     }
-
+    
     // Tạo các biến thể với giá và số lượng từ form
     for (const [idx, v] of variants.entries()) {
       // ... upload ảnh biến thể nếu có ...
-      let trangThaiVariant = Number(addSoLuong) === 0 ? 'Hết hàng' : 'Đang bán';
       const res = await fetch('http://localhost:8080/chi-tiet-san-pham/them', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -673,7 +668,7 @@ export default function ProductDetailTable() {
           soLuong: addSoLuong, // Sử dụng số lượng từ form
           gia: addGia, // Sử dụng giá từ form
           // idHinhAnh: ...,
-          trangThai: trangThaiVariant
+          trangThai: 'Đang bán'
         })
       });
       if (!res.ok) {
@@ -745,310 +740,10 @@ export default function ProductDetailTable() {
     return variants.length > 0;
   };
 
-  // Group các biến thể thành danh sách sản phẩm cha duy nhất
-  const groupedProducts = React.useMemo(() => {
-    const map = new Map();
-    filteredDetails.forEach(detail => {
-      if (!map.has(detail.maSanPham)) {
-        map.set(detail.maSanPham, {
-          maSanPham: detail.maSanPham,
-          tenSanPham: detail.tenSanPham,
-          tenThuongHieu: detail.tenThuongHieu,
-          tenDanhMuc: detail.tenDanhMuc,
-          moTa: detail.moTa,
-          tongSoLuong: 0,
-          trangThai: detail.trangThai,
-          idSanPham: detail.idSanPham,
-          hasDangBan: false
-        });
-      }
-      const group = map.get(detail.maSanPham);
-      group.tongSoLuong += Number(detail.soLuong) || 0;
-      if (detail.trangThai === 'Đang bán') group.hasDangBan = true;
-    });
-    // Sau khi group xong, set trạng thái đúng
-    const result = Array.from(map.values()).map(g => {
-      if (g.tongSoLuong === 0) {
-        g.trangThai = 'Hết hàng';
-      } else if (g.hasDangBan) {
-        g.trangThai = 'Đang bán';
-      }
-      delete g.hasDangBan;
-      return g;
-    });
-    return result;
-  }, [filteredDetails]);
-
-  // Phân trang trên danh sách sản phẩm cha đã group
-  const pagedProducts = groupedProducts.slice(page * pageSize, (page + 1) * pageSize);
-
-  // Render bảng dùng pagedProducts
-  <tbody>
-  {pagedProducts.map((prod, idx) => (
-      <tr key={(prod.idSanPham ?? prod.maSanPham) + '-' + idx} style={{ color: '#222' }}>
-        <td style={{padding:'6px 8px', textAlign:'center'}}>{page * pageSize + idx + 1}</td>
-        <td style={{padding:'6px 8px'}}>{prod.maSanPham}</td>
-        <td style={{padding:'6px 8px'}}>{prod.tenSanPham}</td>
-        <td style={{padding:'6px 8px'}}>{prod.tenThuongHieu}</td>
-        <td style={{padding:'6px 8px'}}>{prod.tenDanhMuc}</td>
-        <td style={{padding:'6px 8px', textAlign:'center'}}>{prod.tongSoLuong}</td>
-        <td style={{padding:'6px 8px', textAlign:'center'}}>
-          {prod.trangThai === 'Đang bán' && (
-              <span style={{
-                background: '#d4f5e9',
-                color: '#178a5c',
-                fontWeight: 700,
-                borderRadius: 16,
-                padding: '2px 16px',
-                fontSize: 15,
-                display: 'inline-block',
-                boxShadow: '0 1px 2px #0001',
-                border: '1px solid #b2e5d3'
-              }}>
-              Đang bán
-            </span>
-          )}
-          {prod.trangThai === 'Ngừng bán' && (
-              <span style={{
-                background: '#ffeaea',
-                color: '#d43c2e',
-                fontWeight: 700,
-                borderRadius: 16,
-                padding: '2px 16px',
-                fontSize: 15,
-                display: 'inline-block',
-                boxShadow: '0 1px 2px #0001',
-                border: '1px solid #f5bdbd'
-              }}>
-              Ngừng bán
-            </span>
-          )}
-          {prod.trangThai === 'Hết hàng' && (
-              <span style={{
-                background: '#f2f2f2',
-                color: '#888',
-                fontWeight: 700,
-                borderRadius: 16,
-                padding: '2px 16px',
-                fontSize: 15,
-                display: 'inline-block',
-                boxShadow: '0 1px 2px #0001',
-                border: '1px solid #e0e0e0'
-              }}>
-              Hết hàng
-            </span>
-          )}
-        </td>
-        <td style={{padding:'6px 8px', textAlign:'center'}}>
-          <button
-              style={{
-                background: prod.trangThai === 'Đang bán' ? '#2ecc40' : '#e67e22',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                padding: 6,
-                cursor: prod.tongSoLuong === 0 ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                fontSize: 15,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 4,
-                opacity: prod.tongSoLuong === 0 ? 0.5 : 1
-              }}
-              title={prod.trangThai === 'Đang bán' ? 'Ngừng bán' : 'Đang bán'}
-              disabled={prod.tongSoLuong === 0}
-              onClick={() => handleToggleProductStatus(prod.maSanPham, prod.trangThai)}
-          >
-            <FaPowerOff style={{ fontSize: 18 }} />
-          </button>
-          <button
-              style={{
-                background: "#3498db",
-                color: "black",
-                border: "none",
-                borderRadius: 6,
-                padding: 6,
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 15,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-              title="Xem chi tiết"
-              onClick={async () => {
-                // Fetch lại dữ liệu mới nhất từ backend
-                const res = await fetch('http://localhost:8080/chi-tiet-san-pham/hien-thi');
-                const data: ProductDetail[] = await res.json();
-                data.sort((a: ProductDetail, b: ProductDetail) => b.idChiTietSanPham - a.idChiTietSanPham);
-                const filtered = data.filter((d: ProductDetail) => d.maSanPham === prod.maSanPham);
-                if (filtered.length > 0) {
-                  setDetailData({
-                    maSanPham: filtered[0].maSanPham,
-                    tenSanPham: filtered[0].tenSanPham,
-                    tenThuongHieu: filtered[0].tenThuongHieu,
-                    tenDanhMuc: filtered[0].tenDanhMuc,
-                    moTa: filtered[0].moTa,
-                    tongSoLuong: filtered.reduce((sum: number, v: ProductDetail) => sum + (v.soLuong || 0), 0),
-                    trangThai: filtered[0].trangThai,
-                    bienThe: filtered,
-                  });
-                  setOpenDetail(true);
-                }
-              }}
-          >
-            <FaEye style={{ fontSize: 15 }} />
-          </button>
-        </td>
-      </tr>
-  ))}
-  </tbody>
-
-  // State cho modal sửa biến thể
-  const [editVariant, setEditVariant] = useState<ProductDetail | null>(null);
-  const [openEditVariantModal, setOpenEditVariantModal] = useState(false);
-  const [editVariantForm, setEditVariantForm] = useState<any>(null);
-  const [editVariantPreviewImg, setEditVariantPreviewImg] = useState<string>('');
-
-  // Thêm state cho lỗi số lượng và giá khi sửa biến thể
-  const [editVariantSoLuongError, setEditVariantSoLuongError] = useState('');
-  const [editVariantGiaError, setEditVariantGiaError] = useState('');
-
-  // Hàm mở modal sửa biến thể
-  const handleEditVariant = (variant: ProductDetail) => {
-    setEditVariant(variant);
-    setEditVariantForm({ ...variant });
-    setEditVariantPreviewImg(variant.duongDanHinhAnh ? `http://localhost:8080/images/${variant.duongDanHinhAnh.replace(/^.*[\\/]/, '')}` : '');
-    setOpenEditVariantModal(true);
-  };
-  // Hàm lưu biến thể (giả lập, chỉ cập nhật state local)
-  const handleSaveEditVariant = async () => {
-    if (!editVariantForm) return;
-    // Validate số lượng và giá
-    let hasError = false;
-    if (Number(editVariantForm.soLuong) < 0 || editVariantForm.soLuong === '' || isNaN(Number(editVariantForm.soLuong))) {
-      setEditVariantSoLuongError('Số lượng phải là số >= 0');
-      hasError = true;
-    } else {
-      setEditVariantSoLuongError('');
-    }
-    if (Number(editVariantForm.gia) < 0 || editVariantForm.gia === '' || isNaN(Number(editVariantForm.gia))) {
-      setEditVariantGiaError('Giá phải là số >= 0');
-      hasError = true;
-    } else {
-      setEditVariantGiaError('');
-    }
-    if (hasError) return;
-    const newTrangThai = Number(editVariantForm.soLuong) === 0 ? 'Hết hàng' : 'Đang bán';
-    try {
-      const payload: any = {
-        gia: Number(editVariantForm.gia),
-        soLuong: Number(editVariantForm.soLuong),
-        trangThai: newTrangThai,
-        idSanPham: editVariantForm.idSanPham,
-        idMauSac: editVariantForm.idMauSac,
-        idKichCo: editVariantForm.idKichCo,
-      };
-      if (editVariantForm.idHinhAnh) {
-        payload.idHinhAnh = editVariantForm.idHinhAnh;
-      }
-      const response = await fetch(`http://localhost:8080/chi-tiet-san-pham/sua/${editVariantForm.idChiTietSanPham}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) {
-        // Không alert nữa, chỉ hiển thị lỗi dưới trường nếu có
-        setEditVariantSoLuongError('Lỗi khi lưu biến thể!');
-        return;
-      }
-      // Luôn fetch lại chi tiết sản phẩm để cập nhật giao diện
-      if (detailData) {
-        const refreshRes = await fetch('http://localhost:8080/chi-tiet-san-pham/hien-thi');
-        const refreshData = await refreshRes.json();
-        refreshData.sort((a: ProductDetail, b: ProductDetail) => b.idChiTietSanPham - a.idChiTietSanPham);
-        const prod = refreshData.filter((d: ProductDetail) => d.maSanPham === detailData.maSanPham);
-        setDetailData({ ...detailData, bienThe: prod });
-        setDetails(refreshData);
-      }
-      setOpenEditVariantModal(false);
-      setEditVariant(null);
-      setEditVariantPreviewImg('');
-    } catch (err) {
-      setEditVariantSoLuongError('Lỗi khi lưu biến thể!');
-    }
-  };
-  // Sửa handleEditVariantImg để upload ảnh và lấy idHinhAnh
-  const handleEditVariantImg = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const preview = URL.createObjectURL(file);
-    setEditVariantPreviewImg(preview);
-    // Upload ảnh lên backend
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const res = await fetch('http://localhost:8080/hinh-anh/upload', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (res.ok && data.idHinhAnh) {
-        setEditVariantForm((f:any) => ({ ...f, idHinhAnh: data.idHinhAnh, newImageFile: file }));
-      } else {
-        alert('Lỗi upload ảnh!');
-      }
-    } catch (err) {
-      alert('Lỗi upload ảnh!');
-    }
-  };
-
-  // Thêm hàm đổi trạng thái cho toàn bộ biến thể của sản phẩm cha
-  const handleToggleProductStatus = async (maSanPham: string, currentStatus: string) => {
-    try {
-      // Lấy danh sách biến thể của sản phẩm cha này
-      const res = await fetch('http://localhost:8080/chi-tiet-san-pham/hien-thi');
-      const allDetails = await res.json();
-      const variants = allDetails.filter((d: ProductDetail) => d.maSanPham === maSanPham);
-      // Xác định trạng thái mới
-      const newStatus = currentStatus === 'Đang bán' ? 'Ngừng bán' : 'Đang bán';
-      // Đổi trạng thái từng biến thể (chỉ đổi nếu số lượng > 0)
-      for (const v of variants) {
-        if (Number(v.soLuong) > 0) {
-          await fetch(`http://localhost:8080/chi-tiet-san-pham/doi-trang-thai/${v.idChiTietSanPham}`, {
-            method: 'PUT'
-          });
-        }
-      }
-      // Sau khi đổi, fetch lại danh sách
-      const refreshRes = await fetch('http://localhost:8080/chi-tiet-san-pham/hien-thi');
-      const refreshData = await refreshRes.json();
-      refreshData.sort((a: ProductDetail, b: ProductDetail) => b.idChiTietSanPham - a.idChiTietSanPham);
-      setDetails(refreshData);
-    } catch (err) {
-      alert('Lỗi đổi trạng thái sản phẩm!');
-    }
-  };
-
-  const actionButtonStyle = {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    padding: 0,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: 'none',
-    fontWeight: 600,
-    fontSize: 15,
-    marginRight: 4
-  };
-
   return (
       <div style={{background:'#fffbe6', minHeight:'100vh', padding:'24px 0'}}>
         <div style={{maxWidth:1400, margin:'0 auto', background:'#fffbe6'}}>
-          <h2 style={{fontWeight:700, fontSize:28, marginBottom:18, color:'#2c2c2c'}}>Danh sách sản phẩm</h2>
+          <h2 style={{fontWeight:700, fontSize:28, marginBottom:18, color:'#2c2c2c'}}>Danh sách chi tiết sản phẩm</h2>
           <Dialog open={showAddForm} onClose={()=>setShowAddForm(false)} maxWidth="lg" fullWidth PaperProps={{ style: { borderRadius: 18, minHeight: 600, padding: 0 } }}>
             <DialogTitle sx={{ fontSize: 28, fontWeight: 700, textAlign: 'center', py: 3 }}>
               Thêm chi tiết sản phẩm
@@ -1060,32 +755,57 @@ export default function ProductDetailTable() {
                   {/* Nút chọn chế độ nằm trong modal */}
                   <Box sx={{display:'flex', justifyContent:'flex-end', mb:2, gap:1}}>
                     <Button
-                        variant={addMode === 'new' ? 'contained' : 'outlined'}
-                        color="primary"
-                        size="small"
-                        sx={{fontWeight:600}}
-                        onClick={() => {
-                          setAddMode('new');
-                          setAddIdSanPham('');
-                          setAddMaSanPham('');
-                          setAddTenSanPham('');
-                          setAddMoTa('');
-                          setAddIdDanhMuc('');
-                          setAddIdThuongHieu('');
-                          setAddTrangThai('');
-                        }}
+                      variant={addMode === 'new' ? 'contained' : 'outlined'}
+                      color="primary"
+                      size="small"
+                      sx={{fontWeight:600}}
+                      onClick={() => {
+                        setAddMode('new');
+                        setAddIdSanPham('');
+                        setAddMaSanPham('');
+                        setAddTenSanPham('');
+                        setAddMoTa('');
+                        setAddIdDanhMuc('');
+                        setAddIdThuongHieu('');
+                        setAddTrangThai('');
+                      }}
                     >
                       Tạo mới sản phẩm
                     </Button>
                     <Button
-                        variant={addMode === 'select' ? 'contained' : 'outlined'}
-                        color="secondary"
-                        size="small"
-                        sx={{fontWeight:600}}
-                        onClick={() => {
-                          setAddMode('select');
-                          setAddIdSanPham(products[0]?.idSanPham ? String(products[0].idSanPham) : '');
-                          const selected = products[0];
+                      variant={addMode === 'select' ? 'contained' : 'outlined'}
+                      color="secondary"
+                      size="small"
+                      sx={{fontWeight:600}}
+                      onClick={() => {
+                        setAddMode('select');
+                        setAddIdSanPham(products[0]?.idSanPham ? String(products[0].idSanPham) : '');
+                        const selected = products[0];
+                        if (selected) {
+                          setAddMaSanPham(selected.maSanPham || '');
+                          setAddTenSanPham(selected.tenSanPham || '');
+                          setAddMoTa(selected.moTa || '');
+                          setAddIdDanhMuc(selected.idDanhMuc ? String(selected.idDanhMuc) : '');
+                          setAddIdThuongHieu(selected.idThuongHieu ? String(selected.idThuongHieu) : '');
+                          setAddTrangThai(selected.trangThai || '');
+                          setAddPreviewImg(selected.duongDanHinhAnh || '');
+                        }
+                      }}
+                    >
+                      Chọn sản phẩm có sẵn
+                    </Button>
+                  </Box>
+                  {/* Chỉ hiển thị dropdown Id sản phẩm khi ở chế độ chọn sản phẩm có sẵn */}
+                  {addMode === 'select' && (
+                    <FormControl fullWidth size="small" sx={{mb:2}}>
+                      <InputLabel>Id sản phẩm</InputLabel>
+                      <Select
+                        value={addIdSanPham || ''}
+                        label="Id sản phẩm"
+                        onChange={e => {
+                          const id = e.target.value;
+                          setAddIdSanPham(id);
+                          const selected = products.find(p => String(p.idSanPham) === String(id));
                           if (selected) {
                             setAddMaSanPham(selected.maSanPham || '');
                             setAddTenSanPham(selected.tenSanPham || '');
@@ -1096,38 +816,13 @@ export default function ProductDetailTable() {
                             setAddPreviewImg(selected.duongDanHinhAnh || '');
                           }
                         }}
-                    >
-                      Chọn sản phẩm có sẵn
-                    </Button>
-                  </Box>
-                  {/* Chỉ hiển thị dropdown Id sản phẩm khi ở chế độ chọn sản phẩm có sẵn */}
-                  {addMode === 'select' && (
-                      <FormControl fullWidth size="small" sx={{mb:2}}>
-                        <InputLabel>Id sản phẩm</InputLabel>
-                        <Select
-                            value={addIdSanPham || ''}
-                            label="Id sản phẩm"
-                            onChange={e => {
-                              const id = e.target.value;
-                              setAddIdSanPham(id);
-                              const selected = products.find(p => String(p.idSanPham) === String(id));
-                              if (selected) {
-                                setAddMaSanPham(selected.maSanPham || '');
-                                setAddTenSanPham(selected.tenSanPham || '');
-                                setAddMoTa(selected.moTa || '');
-                                setAddIdDanhMuc(selected.idDanhMuc ? String(selected.idDanhMuc) : '');
-                                setAddIdThuongHieu(selected.idThuongHieu ? String(selected.idThuongHieu) : '');
-                                setAddTrangThai(selected.trangThai || '');
-                                setAddPreviewImg(selected.duongDanHinhAnh || '');
-                              }
-                            }}
-                        >
-                          <MenuItem value="">---</MenuItem>
-                          {products.map(p => (
-                              <MenuItem key={p.idSanPham} value={String(p.idSanPham)}>{p.idSanPham}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      >
+                        <MenuItem value="">---</MenuItem>
+                        {products.map(p => (
+                          <MenuItem key={p.idSanPham} value={String(p.idSanPham)}>{p.idSanPham}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   )}
                   <TextField label="Mã sản phẩm" fullWidth size="small" sx={{mb:2}} value={addMaSanPham} onChange={e => { setMaSanPhamError(''); setAddMaSanPham(e.target.value); }} InputProps={{ readOnly: addMode === 'select' }} error={!!maSanPhamError} helperText={maSanPhamError} />
                   <TextField label="Tên sản phẩm" fullWidth size="small" sx={{mb:2}} value={addTenSanPham} onChange={e => { setTenSanPhamError(''); setAddTenSanPham(e.target.value); }} InputProps={{ readOnly: addMode === 'select' }} error={!!tenSanPhamError} helperText={tenSanPhamError} />
@@ -1137,7 +832,7 @@ export default function ProductDetailTable() {
                     <Select value={addIdDanhMuc || ''} label="Danh mục" onChange={addMode === 'select' ? undefined : e=>setAddIdDanhMuc(e.target.value)}>
                       <MenuItem value="">---</MenuItem>
                       {danhMucs.map(dm => (
-                          <MenuItem key={dm.idDanhMuc} value={String(dm.idDanhMuc)}>{dm.tenDanhMuc}</MenuItem>
+                        <MenuItem key={dm.idDanhMuc} value={String(dm.idDanhMuc)}>{dm.tenDanhMuc}</MenuItem>
                       ))}
                     </Select>
                     {danhMucError && <Typography color="error" fontSize={13} mt={0.5}>{danhMucError}</Typography>}
@@ -1147,7 +842,7 @@ export default function ProductDetailTable() {
                     <Select value={addIdThuongHieu || ''} label="Thương hiệu" onChange={addMode === 'select' ? undefined : e=>setAddIdThuongHieu(e.target.value)}>
                       <MenuItem value="">---</MenuItem>
                       {thuongHieus.map(th => (
-                          <MenuItem key={th.idThuongHieu} value={String(th.idThuongHieu)}>{th.tenThuongHieu}</MenuItem>
+                        <MenuItem key={th.idThuongHieu} value={String(th.idThuongHieu)}>{th.tenThuongHieu}</MenuItem>
                       ))}
                     </Select>
                     {thuongHieuError && <Typography color="error" fontSize={13} mt={0.5}>{thuongHieuError}</Typography>}
@@ -1158,123 +853,122 @@ export default function ProductDetailTable() {
                       <MenuItem value="">---</MenuItem>
                       <MenuItem value="Đang bán">Đang bán</MenuItem>
                       <MenuItem value="Ngừng bán">Ngừng bán</MenuItem>
-                      <MenuItem value="Hết hàng">Hết hàng</MenuItem>
                     </Select>
                     {trangThaiError && <Typography color="error" fontSize={13} mt={0.5}>{trangThaiError}</Typography>}
                   </FormControl>
-
+                  
                   {/* Thêm trường nhập giá và số lượng cho form thêm mới */}
-                  <TextField
-                      label="Giá"
-                      fullWidth
-                      size="small"
-                      sx={{mb:2}}
-                      value={addGia}
-                      onChange={e => {
-                        setAddGia(e.target.value);
-                        if (e.target.value === '' || Number(e.target.value) <= 0) {
-                          setAddGiaError('Giá phải lớn hơn 0');
-                        } else {
-                          setAddGiaError('');
-                        }
-                      }}
-                      type="number"
-                      error={!!addGiaError}
-                      helperText={addGiaError}
+                  <TextField 
+                    label="Giá" 
+                    fullWidth 
+                    size="small" 
+                    sx={{mb:2}} 
+                    value={addGia} 
+                    onChange={e => {
+                      setAddGia(e.target.value);
+                      if (e.target.value === '' || Number(e.target.value) <= 0) {
+                        setAddGiaError('Giá phải lớn hơn 0');
+                      } else {
+                        setAddGiaError('');
+                      }
+                    }}
+                    type="number"
+                    error={!!addGiaError}
+                    helperText={addGiaError}
                   />
-                  <TextField
-                      label="Số lượng"
-                      fullWidth
-                      size="small"
-                      sx={{mb:2}}
-                      value={addSoLuong}
-                      onChange={e => {
-                        setAddSoLuong(e.target.value);
-                        if (e.target.value === '' || Number(e.target.value) <= 0) {
-                          setAddSoLuongError('Số lượng phải lớn hơn 0');
-                        } else {
-                          setAddSoLuongError('');
-                        }
-                      }}
-                      type="number"
-                      error={!!addSoLuongError}
-                      helperText={addSoLuongError}
+                  <TextField 
+                    label="Số lượng" 
+                    fullWidth 
+                    size="small" 
+                    sx={{mb:2}} 
+                    value={addSoLuong} 
+                    onChange={e => {
+                      setAddSoLuong(e.target.value);
+                      if (e.target.value === '' || Number(e.target.value) <= 0) {
+                        setAddSoLuongError('Số lượng phải lớn hơn 0');
+                      } else {
+                        setAddSoLuongError('');
+                      }
+                    }}
+                    type="number"
+                    error={!!addSoLuongError}
+                    helperText={addSoLuongError}
                   />
-
+                  
                   {/* Ẩn phần chọn ảnh đại diện khi tạo mới sản phẩm */}
                   {addMode === 'select' && (
-                      <Box sx={{display:'flex', flexDirection:'column', alignItems:'center', mt:2}}>
-                      </Box>
+                    <Box sx={{display:'flex', flexDirection:'column', alignItems:'center', mt:2}}>
+                    </Box>
                   )}
                 </Paper>
                 {/* Cột phải: Bảng nhập từng biến thể */}
                 {variantTableVisible && (
-                    <Paper sx={{flex:1, minWidth:350, maxWidth:600, p:4, borderRadius:8, boxShadow:2, bgcolor:'#fafbfc', mb:2}} elevation={3}>
-                      <TableContainer component={Paper} sx={{ mt: 0 }}>
-                        <Table>
-                          <TableHead>
+                  <Paper sx={{flex:1, minWidth:350, maxWidth:600, p:4, borderRadius:8, boxShadow:2, bgcolor:'#fafbfc', mb:2}} elevation={3}>
+                    <TableContainer component={Paper} sx={{ mt: 0 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Màu sắc</TableCell>
+                            <TableCell>Kích cỡ</TableCell>
+                            <TableCell>Ảnh</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {variants.length === 0 ? (
                             <TableRow>
-                              <TableCell>Màu sắc</TableCell>
-                              <TableCell>Kích cỡ</TableCell>
-                              <TableCell>Ảnh</TableCell>
+                              <TableCell colSpan={3} align="center" style={{ color: '#888', fontStyle: 'italic' }}>
+                                Hãy chọn màu sắc và kích cỡ để tạo biến thể
+                              </TableCell>
                             </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {variants.length === 0 ? (
-                                <TableRow>
-                                  <TableCell colSpan={3} align="center" style={{ color: '#888', fontStyle: 'italic' }}>
-                                    Hãy chọn màu sắc và kích cỡ để tạo biến thể
-                                  </TableCell>
-                                </TableRow>
-                            ) : (
-                                variants.map((v, idx) => (
-                                    <TableRow key={v.idMauSac + '-' + v.idKichCo}>
-                                      <TableCell>{mauSacs.find(ms => String(ms.idMauSac) === v.idMauSac)?.mauSac || v.idMauSac}</TableCell>
-                                      <TableCell>{kichCos.find(kc => String(kc.idKichCo) === v.idKichCo)?.kichCo || v.idKichCo}</TableCell>
-                                      <TableCell>
-                                        <label style={{ display: 'block' }}>
-                                          <input
-                                              type="file"
-                                              accept="image/*"
-                                              style={{ display: 'none' }}
-                                              onChange={e => {
-                                                const file = e.target.files?.[0] || null;
-                                                if (!file) return;
-                                                const preview = file ? URL.createObjectURL(file) : '';
-                                                const currentMauSac = v.idMauSac;
-                                                setVariants(prevVariants =>
-                                                    prevVariants.map((item, i) => {
-                                                      if (item.idMauSac === currentMauSac) {
-                                                        return {
-                                                          ...item,
-                                                          previewImg: preview,
-                                                          hinhAnh: idx === i ? file : item.hinhAnh
-                                                        };
-                                                      }
-                                                      // Luôn trả về object mới để React re-render
-                                                      return { ...item };
-                                                    })
-                                                );
-                                              }}
-                                          />
-                                          <Button variant="outlined" component="span" size="small">
-                                            Chọn ảnh
-                                          </Button>
-                                        </label>
-                                        {getPreviewImgForColor(v.idMauSac) && (
-                                            <img src={getPreviewImgForColor(v.idMauSac)} alt="preview" style={{ width: 40, height: 40, marginTop: 4 }} />
-                                        )}
-                                        {!getPreviewImgForColor(v.idMauSac) && (
-                                            <Typography color="error" fontSize={13}>Chọn ảnh</Typography>
-                                        )}
-                                      </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Paper>
+                          ) : (
+                            variants.map((v, idx) => (
+                                                          <TableRow key={v.idMauSac + '-' + v.idKichCo}>
+                              <TableCell>{mauSacs.find(ms => String(ms.idMauSac) === v.idMauSac)?.mauSac || v.idMauSac}</TableCell>
+                              <TableCell>{kichCos.find(kc => String(kc.idKichCo) === v.idKichCo)?.kichCo || v.idKichCo}</TableCell>
+                              <TableCell>
+                                  <label style={{ display: 'block' }}>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      style={{ display: 'none' }}
+                                      onChange={e => {
+                                        const file = e.target.files?.[0] || null;
+                                        if (!file) return;
+                                        const preview = file ? URL.createObjectURL(file) : '';
+                                        const currentMauSac = v.idMauSac;
+                                        setVariants(prevVariants =>
+                                          prevVariants.map((item, i) => {
+                                            if (item.idMauSac === currentMauSac) {
+                                              return {
+                                                ...item,
+                                                previewImg: preview,
+                                                hinhAnh: idx === i ? file : item.hinhAnh
+                                              };
+                                            }
+                                            // Luôn trả về object mới để React re-render
+                                            return { ...item };
+                                          })
+                                        );
+                                      }}
+                                    />
+                                    <Button variant="outlined" component="span" size="small">
+                                      Chọn ảnh
+                                    </Button>
+                                  </label>
+                                  {getPreviewImgForColor(v.idMauSac) && (
+                                    <img src={getPreviewImgForColor(v.idMauSac)} alt="preview" style={{ width: 40, height: 40, marginTop: 4 }} />
+                                  )}
+                                  {!getPreviewImgForColor(v.idMauSac) && (
+                                    <Typography color="error" fontSize={13}>Chọn ảnh</Typography>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Paper>
                 )}
               </Box>
               {/* Chọn nhiều biến thể */}
@@ -1296,48 +990,48 @@ export default function ProductDetailTable() {
                     {kichCoError && <Typography color="error" fontSize={13} mt={0.5}>{kichCoError}</Typography>}
                   </FormControl>
                   <Button
-                      variant="contained"
-                      color="primary"
-                      sx={{fontWeight:600, minWidth:140}}
-                      onClick={() => {
-                        // Gom lỗi vào object
-                        const error: Record<string, string> = {};
-                        if (!addMaSanPham.trim()) error.maSanPham = 'Vui lòng nhập mã sản phẩm!';
-                        if (!addTenSanPham.trim()) error.tenSanPham = 'Vui lòng nhập tên sản phẩm!';
-                        if (!addIdDanhMuc) error.danhMuc = 'Vui lòng chọn danh mục!';
-                        if (!addIdThuongHieu) error.thuongHieu = 'Vui lòng chọn thương hiệu!';
-                        if (!addTrangThai) error.trangThai = 'Vui lòng chọn trạng thái!';
-                        if (addMultiMauSac.length === 0) error.mauSac = 'Vui lòng chọn ít nhất 1 màu sắc!';
-                        if (addMultiKichCo.length === 0) error.kichCo = 'Vui lòng chọn ít nhất 1 kích cỡ!';
-                        setMaSanPhamError(error.maSanPham || '');
-                        setTenSanPhamError(error.tenSanPham || '');
-                        setDanhMucError(error.danhMuc || '');
-                        setThuongHieuError(error.thuongHieu || '');
-                        setTrangThaiError(error.trangThai || '');
-                        setMauSacError(error.mauSac || '');
-                        setKichCoError(error.kichCo || '');
-                        if (Object.keys(error).length > 0) {
-                          setVariantError('');
-                          setVariantTableVisible(false);
-                          setVariants([]);
-                          return;
-                        }
+                    variant="contained"
+                    color="primary"
+                    sx={{fontWeight:600, minWidth:140}}
+                    onClick={() => {
+                      // Gom lỗi vào object
+                      const error: Record<string, string> = {};
+                      if (!addMaSanPham.trim()) error.maSanPham = 'Vui lòng nhập mã sản phẩm!';
+                      if (!addTenSanPham.trim()) error.tenSanPham = 'Vui lòng nhập tên sản phẩm!';
+                      if (!addIdDanhMuc) error.danhMuc = 'Vui lòng chọn danh mục!';
+                      if (!addIdThuongHieu) error.thuongHieu = 'Vui lòng chọn thương hiệu!';
+                      if (!addTrangThai) error.trangThai = 'Vui lòng chọn trạng thái!';
+                      if (addMultiMauSac.length === 0) error.mauSac = 'Vui lòng chọn ít nhất 1 màu sắc!';
+                      if (addMultiKichCo.length === 0) error.kichCo = 'Vui lòng chọn ít nhất 1 kích cỡ!';
+                      setMaSanPhamError(error.maSanPham || '');
+                      setTenSanPhamError(error.tenSanPham || '');
+                      setDanhMucError(error.danhMuc || '');
+                      setThuongHieuError(error.thuongHieu || '');
+                      setTrangThaiError(error.trangThai || '');
+                      setMauSacError(error.mauSac || '');
+                      setKichCoError(error.kichCo || '');
+                      if (Object.keys(error).length > 0) {
                         setVariantError('');
-                        setVariantTableVisible(true);
-                        // Generate variants
-                        const newVariants = [];
-                        for (const mauSacId of addMultiMauSac) {
-                          for (const kichCoId of addMultiKichCo) {
-                            newVariants.push({
-                              idMauSac: mauSacId,
-                              idKichCo: kichCoId,
-                              hinhAnh: null,
-                              previewImg: ''
-                            });
-                          }
+                        setVariantTableVisible(false);
+                        setVariants([]);
+                        return;
+                      }
+                      setVariantError('');
+                      setVariantTableVisible(true);
+                      // Generate variants
+                      const newVariants = [];
+                      for (const mauSacId of addMultiMauSac) {
+                        for (const kichCoId of addMultiKichCo) {
+                          newVariants.push({
+                            idMauSac: mauSacId,
+                            idKichCo: kichCoId,
+                            hinhAnh: null,
+                            previewImg: ''
+                          });
                         }
-                        setVariants(newVariants);
-                      }}
+                      }
+                      setVariants(newVariants);
+                    }}
                   >
                     Tạo biến thể
                   </Button>
@@ -1365,25 +1059,25 @@ export default function ProductDetailTable() {
             </DialogActions>
           </Dialog>
           <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 16,
-                flexWrap: 'wrap', // Cho phép xuống dòng khi thiếu chỗ
-                gap: 12
-              }}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16,
+              flexWrap: 'wrap', // Cho phép xuống dòng khi thiếu chỗ
+              gap: 12
+            }}
           >
             <div
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  alignItems: 'center',
-                  marginLeft: 24,
-                  flexWrap: 'wrap', // Cho phép filter xuống dòng
-                  flex: 1,
-                  minWidth: 0
-                }}
+              style={{
+                display: 'flex',
+                gap: 8,
+                alignItems: 'center',
+                marginLeft: 24,
+                flexWrap: 'wrap', // Cho phép filter xuống dòng
+                flex: 1,
+                minWidth: 0
+              }}
             >
               <TextField placeholder="Tìm kiếm sản phẩm" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} size="small" sx={{minWidth:220, background:'#fff'}} />
               <Select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} displayEmpty size="small" sx={{minWidth:140, background:'#fff'}}>
@@ -1412,9 +1106,7 @@ export default function ProductDetailTable() {
               </Select>
               <Select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} displayEmpty size="small" sx={{minWidth:120, background:'#fff'}}>
                 <MenuItem value="">--Trạng thái--</MenuItem>
-                <MenuItem value="Đang bán">Đang bán</MenuItem>
-                <MenuItem value="Ngừng bán">Ngừng bán</MenuItem>
-                <MenuItem value="Hết hàng">Hết hàng</MenuItem>
+                {uniqueStatus.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
               </Select>
               {(searchTerm || filterBrand || filterCategory || filterColor || filterSize || filterStatus) && (
                   <Button onClick={() => {
@@ -1430,250 +1122,211 @@ export default function ProductDetailTable() {
             </div>
             <div style={{ display: 'flex', gap: 12, marginLeft: 32 }}>
               <Button
-                  variant="contained"
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 16,
-                    borderRadius: 12,
-                    background: '#b59d3a',
-                    color: '#fff',
-                    height: 44,
-                    minWidth: 10,
-                    padding: '0 16px',
-                    boxShadow: '0 2px 8px #b59d3a22',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10
-                  }}
-                  onClick={() => {
-                    window.location.href = '/ChiTietSanPham/ThemChiTietSanPham';
-                  }}
+                variant="contained"
+                style={{
+                  fontWeight: 700,
+                  fontSize: 16,
+                  borderRadius: 12,
+                  background: '#b59d3a',
+                  color: '#fff',
+                  height: 44,
+                  minWidth: 10,
+                  padding: '0 16px',
+                  boxShadow: '0 2px 8px #b59d3a22',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}
+                onClick={() => {
+                  window.location.href = '/ChiTietSanPham/ThemChiTietSanPham';
+                }}
               >
                 <FaPlus style={{ fontSize: 18, marginRight: 6 }} />
                 Thêm chi tiết sản phẩm
               </Button>
             </div>
           </div>
-          {/* Bảng sản phẩm chính */}
           <div style={{overflowX:'auto', background:'#fff', borderRadius:10, boxShadow:'0 2px 8px #b59d3a22'}}>
-            <table style={{minWidth:900, width:'100%', borderCollapse:'collapse', background:'#fff', fontSize:15, lineHeight:1.4}}>
+            <table style={{minWidth:1100, width:'100%', borderCollapse:'collapse', background:'#fff', fontSize:15, lineHeight:1.4}}>
               <thead>
               <tr>
-                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>STT</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>STT</th>
                 <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Mã sản phẩm</th>
                 <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Tên sản phẩm</th>
                 <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Thương hiệu</th>
                 <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Danh mục</th>
-                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Tổng số lượng</th>
-                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Trạng thái</th>
-                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Thao tác</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Màu sắc</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Kích cỡ</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Hình ảnh</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Giá</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Số lượng</th>
+                <th style={{padding:'6px 8px', minWidth:90, maxWidth:110, whiteSpace:'nowrap', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Trạng thái</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Mô tả</th>
+                <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Thao tác</th>
               </tr>
               </thead>
               <tbody>
-              {pagedProducts.map((prod, idx) => (
-                  <tr key={(prod.idSanPham ?? prod.maSanPham) + '-' + idx} style={{ color: '#222' }}>
-                    <td style={{padding:'6px 8px', textAlign:'center'}}>{page * pageSize + idx + 1}</td>
-                    <td style={{padding:'6px 8px'}}>{prod.maSanPham}</td>
-                    <td style={{padding:'6px 8px'}}>{prod.tenSanPham}</td>
-                    <td style={{padding:'6px 8px'}}>{prod.tenThuongHieu}</td>
-                    <td style={{padding:'6px 8px'}}>{prod.tenDanhMuc}</td>
-                    <td style={{padding:'6px 8px', textAlign:'center'}}>{prod.tongSoLuong}</td>
+              {pagedDetails.map((detail, idx) => (
+                  <tr
+                      key={detail.idChiTietSanPham}
+                      style={{
+                        color: '#222',
+                      }}
+                  >
+                    <td style={{padding:'6px 8px', textAlign:'center'}}>{detail.idChiTietSanPham}</td>
+                    <td style={{padding:'6px 8px'}}>{detail.maSanPham}</td>
+                    <td style={{padding:'6px 8px'}}>{detail.tenSanPham}</td>
+                    <td style={{padding:'6px 8px'}}>{detail.tenThuongHieu}</td>
+                    <td style={{padding:'6px 8px'}}>{detail.tenDanhMuc}</td>
+                    <td style={{padding:'6px 8px'}}>{detail.tenMauSac}</td>
+                    <td style={{padding:'6px 8px'}}>{detail.tenKichCo}</td>
                     <td style={{padding:'6px 8px', textAlign:'center'}}>
-                      {prod.trangThai === 'Đang bán' && (
-                          <span style={{
-                            background: '#d4f5e9',
-                            color: '#178a5c',
-                            fontWeight: 700,
-                            borderRadius: 16,
-                            padding: '2px 16px',
-                            fontSize: 15,
-                            display: 'inline-block',
-                            boxShadow: '0 1px 2px #0001',
-                            border: '1px solid #b2e5d3'
-                          }}>
-                          Đang bán
-                        </span>
-                      )}
-                      {prod.trangThai === 'Ngừng bán' && (
-                          <span style={{
-                            background: '#ffeaea',
-                            color: '#d43c2e',
-                            fontWeight: 700,
-                            borderRadius: 16,
-                            padding: '2px 16px',
-                            fontSize: 15,
-                            display: 'inline-block',
-                            boxShadow: '0 1px 2px #0001',
-                            border: '1px solid #f5bdbd'
-                          }}>
-                          Ngừng bán
-                        </span>
-                      )}
-                      {prod.trangThai === 'Hết hàng' && (
-                          <span style={{
-                            background: '#f2f2f2',
-                            color: '#888',
-                            fontWeight: 700,
-                            borderRadius: 16,
-                            padding: '2px 16px',
-                            fontSize: 15,
-                            display: 'inline-block',
-                            boxShadow: '0 1px 2px #0001',
-                            border: '1px solid #e0e0e0'
-                          }}>
-                          Hết hàng
-                        </span>
+                      {detail.duongDanHinhAnh && detail.duongDanHinhAnh.trim() ? (
+                          <img
+                              src={detail.duongDanHinhAnh.startsWith('/images/')
+                                  ? `http://localhost:8080${detail.duongDanHinhAnh}`
+                                  : detail.duongDanHinhAnh.startsWith('http')
+                                    ? detail.duongDanHinhAnh
+                                    : `http://localhost:8080/hinh-anh/view/${detail.duongDanHinhAnh.replace(/^.*[\\/]/, '')}`}
+                              alt="Hình ảnh"
+                              style={{width:40, height:40, objectFit:'contain', borderRadius:6, border:'1px solid #eee', background:'#fafafa'}}
+                          />
+                      ) : (
+                          <span style={{color:'#aaa'}}>Hình ảnh</span>
                       )}
                     </td>
+                    <td style={{padding:'6px 8px', textAlign:'right'}}>{detail.gia?.toLocaleString('vi-VN')}đ</td>
+                    <td style={{padding:'6px 8px', textAlign:'center'}}>{detail.soLuong}</td>
+                    <td style={{padding:'6px 8px', textAlign:'center', minWidth:90, maxWidth:110, whiteSpace:'nowrap'}}>
+                      <span style={{color: detail.trangThai === 'Đang bán' ? '#388e3c' : '#d32f2f', fontWeight:600, fontSize:15, letterSpacing:0.2}}>{detail.trangThai}</span>
+                    </td>
+                    <td style={{padding:'6px 8px'}}>{detail.moTa}</td>
                     <td style={{padding:'6px 8px', textAlign:'center'}}>
-                      {/* Nút xem chi tiết nằm bên trái */}
-                      <button
+                      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <button
                           style={{
-                            ...actionButtonStyle,
                             background: "#3498db",
-                            color: "black"
+                            color: "black",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: 6,
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: 15,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 4
                           }}
                           title="Xem chi tiết"
-                          onClick={async () => {
-                            // Fetch lại dữ liệu mới nhất từ backend
-                            const res = await fetch('http://localhost:8080/chi-tiet-san-pham/hien-thi');
-                            const data: ProductDetail[] = await res.json();
-                            data.sort((a: ProductDetail, b: ProductDetail) => b.idChiTietSanPham - a.idChiTietSanPham);
-                            const filtered = data.filter((d: ProductDetail) => d.maSanPham === prod.maSanPham);
-                            if (filtered.length > 0) {
-                              setDetailData({
-                                maSanPham: filtered[0].maSanPham,
-                                tenSanPham: filtered[0].tenSanPham,
-                                tenThuongHieu: filtered[0].tenThuongHieu,
-                                tenDanhMuc: filtered[0].tenDanhMuc,
-                                moTa: filtered[0].moTa,
-                                tongSoLuong: filtered.reduce((sum: number, v: ProductDetail) => sum + (v.soLuong || 0), 0),
-                                trangThai: filtered[0].trangThai,
-                                bienThe: filtered,
-                              });
-                              setOpenDetail(true);
-                            }
-                          }}
-                      >
-                        <FaEye style={{ fontSize: 16 }} />
-                      </button>
-                      {/* Nút đổi trạng thái nằm bên phải */}
-                      <button
+                          onClick={() => { setDetailData(detail); setOpenDetail(true); }}
+                        >
+                          <FaEye style={{ fontSize: 15 }} />
+                        </button>
+                        <button
                           style={{
-                            ...actionButtonStyle,
-                            background:
-                                prod.trangThai === 'Đang bán'
-                                    ? '#2ecc40'
-                                    : prod.trangThai === 'Ngừng bán'
-                                        ? '#e74c3c'
-                                        : '#e0bfae',
-                            color: '#fff',
-                            cursor: prod.tongSoLuong === 0 ? 'not-allowed' : 'pointer',
-                            opacity: prod.tongSoLuong === 0 ? 0.5 : 1,
-                            marginRight: 0
+                            background: "#f1c40f",
+                            color: "#222",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: 6,
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: 15,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 4
                           }}
-                          title={prod.trangThai === 'Đang bán' ? 'Ngừng bán' : 'Đang bán'}
-                          disabled={prod.tongSoLuong === 0}
-                          onClick={() => handleToggleProductStatus(prod.maSanPham, prod.trangThai)}
-                      >
-                        <FaPowerOff style={{ fontSize: 16 }} />
-                      </button>
+                          title="Sửa"
+                          onClick={() => {
+                            setEditDetail(detail);
+                            setEditForm({
+                              ...detail,
+                              idSanPham: detail.idSanPham,
+                              idThuongHieu: thuongHieus.find(th => th.tenThuongHieu === detail.tenThuongHieu)?.idThuongHieu ? String(thuongHieus.find(th => th.tenThuongHieu === detail.tenThuongHieu)?.idThuongHieu) : '',
+                              idDanhMuc: danhMucs.find(dm => dm.tenDanhMuc === detail.tenDanhMuc)?.idDanhMuc ? String(danhMucs.find(dm => dm.tenDanhMuc === detail.tenDanhMuc)?.idDanhMuc) : '',
+                              idMauSac: mauSacs.find(ms => ms.mauSac === detail.tenMauSac)?.idMauSac ? String(mauSacs.find(ms => ms.mauSac === detail.tenMauSac)?.idMauSac) : '',
+                              idKichCo: kichCos.find(kc => kc.kichCo === detail.tenKichCo)?.idKichCo ? String(kichCos.find(kc => kc.kichCo === detail.tenKichCo)?.idKichCo) : '',
+                            });
+                            setPreviewImg("");
+                          }}
+                        >
+                          <FaEdit style={{ fontSize: 15 }} />
+                        </button>
+                        <button
+                          style={{
+                            background: detail.trangThai === "Đang bán" ? "#2ecc40" : "#e74c3c",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: 6,
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: 15,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}
+                          title={detail.trangThai === "Đang bán" ? "Ngừng bán" : "Kích hoạt lại"}
+                          onClick={() => handleToggleStatus(detail)}
+                        >
+                          <FaPowerOff style={{ fontSize: 15 }} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
               ))}
               </tbody>
             </table>
           </div>
-          {/* Modal chi tiết biến thể */}
-          <Dialog
-              open={openDetail}
-              onClose={() => setOpenDetail(false)}
-              maxWidth="md"
-              fullWidth
-              PaperProps={{ style: { borderRadius: 18, minWidth: 900, maxWidth: 1200 } }}
-          >
-            <DialogTitle sx={{textAlign:'center', fontWeight:700, fontSize:24}}>Danh sách biến thể của sản phẩm</DialogTitle>
+          {/* Pagination */}
+          <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8,margin:'18px 0'}}>
+            <Button onClick={()=>handlePageChange(page-1)} disabled={page===0} variant="outlined" sx={{borderRadius:6, minWidth:80}} style={{color:'#222'}}>Trước</Button>
+            {Array.from({length: totalPages}, (_,i)=>(
+                <Button key={i} onClick={()=>handlePageChange(i)} disabled={i===page} variant={i===page?'contained':'outlined'} sx={{borderRadius:6, minWidth:40, fontWeight:700}} style={{color:'#222'}}>{i+1}</Button>
+            ))}
+            <Button onClick={()=>handlePageChange(page+1)} disabled={page===totalPages-1} variant="outlined" sx={{borderRadius:6, minWidth:80}} style={{color:'#222'}}>Sau</Button>
+          </div>
+          {/* Modal chi tiết sản phẩm */}
+          <Dialog open={openDetail} onClose={()=>setOpenDetail(false)} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{textAlign:'center', fontWeight:700, fontSize:24}}>Chi tiết sản phẩm</DialogTitle>
             <DialogContent>
               {detailData && (
                   <Box sx={{display:'flex', flexDirection:{xs:'column',sm:'row'}, gap:4, alignItems:'flex-start', justifyContent:'center', mt:2}}>
-                    {/* Thông tin sản phẩm cha */}
+                    {/* Thông tin bên trái */}
                     <Box sx={{flex:1, minWidth:220}}>
+                      <Box sx={{mb:1}}><b>ID:</b> <span>{detailData.idChiTietSanPham}</span></Box>
                       <Box sx={{mb:1}}><b>Mã SP:</b> <span>{detailData.maSanPham}</span></Box>
                       <Box sx={{mb:1}}><b>Tên SP:</b> <span>{detailData.tenSanPham}</span></Box>
                       <Box sx={{mb:1}}><b>Thương hiệu:</b> <span>{detailData.tenThuongHieu}</span></Box>
                       <Box sx={{mb:1}}><b>Danh mục:</b> <span>{detailData.tenDanhMuc}</span></Box>
+                      <Box sx={{mb:1}}><b>Màu sắc:</b> <span>{detailData.tenMauSac}</span></Box>
+                      <Box sx={{mb:1}}><b>Kích cỡ:</b> <span>{detailData.tenKichCo}</span></Box>
+                      <Box sx={{mb:1}}><b>Giá:</b> <span style={{color:'#1976d2', fontWeight:600}}>{detailData.gia?.toLocaleString('vi-VN')}đ</span></Box>
+                      <Box sx={{mb:1}}><b>Số lượng:</b> <span>{detailData.soLuong}</span></Box>
+                      <Box sx={{mb:1}}><b>Trạng thái:</b> <span style={{color: detailData.trangThai === 'Đang bán' ? '#388e3c' : '#d32f2f', fontWeight:600}}>{detailData.trangThai}</span></Box>
                       <Box sx={{mb:1}}><b>Mô tả:</b> <span>{detailData.moTa}</span></Box>
-                      <Box sx={{mb:1}}><b>Tổng số lượng:</b> <span>{detailData.tongSoLuong}</span></Box>
-                      <Box sx={{mb:1}}><b>Trạng thái:</b> <span>{detailData.trangThai}</span></Box>
                     </Box>
-                  </Box>
-              )}
-              {/* Bảng biến thể */}
-              {detailData && (
-                  <Box sx={{mt:2}}>
-                    <table style={{width:'100%', borderCollapse:'collapse', background:'#fff', fontSize:15, lineHeight:1.4}}>
-                      <thead>
-                      <tr>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>STT</th>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Màu sắc</th>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "left", fontSize: "0.9rem", borderBottom: "2px solid "}}>Kích cỡ</th>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Số lượng</th>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Trạng thái</th>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Giá</th>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Ảnh</th>
-                        <th style={{padding:'6px 8px', fontWeight: 700, textAlign: "center", fontSize: "0.9rem", borderBottom: "2px solid "}}>Thao tác</th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      {Array.isArray(detailData?.bienThe) && detailData.bienThe.map((v: ProductDetail, idx: number) => (
-                          <tr key={v.idChiTietSanPham}>
-                            <td style={{padding:'6px 8px', textAlign:'center'}}>{idx + 1}</td>
-                            <td style={{padding:'6px 8px'}}>{v.tenMauSac}</td>
-                            <td style={{padding:'6px 8px'}}>{v.tenKichCo}</td>
-                            <td style={{padding:'6px 8px', textAlign:'center'}}>{v.soLuong}</td>
-                            <td style={{padding:'6px 8px', textAlign:'center'}}>{v.trangThai}</td>
-                            <td style={{padding:'6px 8px', textAlign:'right'}}>{v.gia?.toLocaleString('vi-VN')}đ</td>
-                            <td style={{padding:'6px 8px', textAlign:'center'}}>
-                              {v.duongDanHinhAnh ? (
-                                  <img
-                                      src={
-                                        v.duongDanHinhAnh.startsWith('http')
-                                            ? v.duongDanHinhAnh
-                                            : `http://localhost:8080/images/${v.duongDanHinhAnh.replace(/^.*[\\/]/, '')}`
-                                      }
-                                      alt="Ảnh"
-                                      style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 6, border: '1px solid #eee', background: '#fafafa' }}
-                                  />
-                              ) : (
-                                  <span style={{ color: '#aaa' }}>Không có ảnh</span>
-                              )}
-                            </td>
-                            <td style={{padding:'6px 8px', textAlign:'center'}}>
-                              <button
-                                  style={{
-                                    background: "#f1c40f",
-                                    color: "#222",
-                                    border: "none",
-                                    borderRadius: 6,
-                                    padding: 6,
-                                    cursor: "pointer",
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center"
-                                  }}
-                                  title="Sửa biến thể"
-                                  onClick={() => handleEditVariant(v)}
-                              >
-                                <FaEdit style={{ fontSize: 15 }} />
-                              </button>
-                            </td>
-                          </tr>
-                      ))}
-                      </tbody>
-                    </table>
+                    {/* Ảnh bên phải */}
+                    <Box sx={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center'}}>
+                      {detailData.duongDanHinhAnh && detailData.duongDanHinhAnh.trim() ? (
+                          <img
+                              src={detailData.duongDanHinhAnh.startsWith('/images/')
+                                  ? `http://localhost:8080${detailData.duongDanHinhAnh}`
+                                  : detailData.duongDanHinhAnh.startsWith('http')
+                                    ? detailData.duongDanHinhAnh
+                                    : `http://localhost:8080/hinh-anh/view/${detailData.duongDanHinhAnh.replace(/^.*[\\/]/, '')}`}
+                              alt="Hình ảnh"
+                              style={{width:180, height:180, objectFit:'contain', borderRadius:12, border:'1px solid #eee', background:'#fafafa', boxShadow:'0 2px 8px #0001', marginTop:8}}
+                          />
+                      ) : (
+                          <Box sx={{width:180, height:180, border:'1px dashed #ccc', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', color:'#aaa', mt:1}}>
+                            Không có ảnh
+                          </Box>
+                      )}
+                    </Box>
                   </Box>
               )}
             </DialogContent>
@@ -1681,14 +1334,6 @@ export default function ProductDetailTable() {
               <Button onClick={()=>setOpenDetail(false)} color="primary">ĐÓNG</Button>
             </DialogActions>
           </Dialog>
-          {/* Pagination */}
-          <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8,margin:'18px 0'}}>
-            <Button onClick={()=>handlePageChange(page-1)} disabled={page===0} variant="outlined" sx={{borderRadius:6, minWidth:80}} style={{color:'#222'}}>Trước</Button>
-            {Array.from({length: Math.max(1, Math.ceil(groupedProducts.length / pageSize))}, (_,i)=>(
-                <Button key={i} onClick={()=>handlePageChange(i)} disabled={i===page} variant={i===page?'contained':'outlined'} sx={{borderRadius:6, minWidth:40, fontWeight:700}} style={{color:'#222'}}>{i+1}</Button>
-            ))}
-            <Button onClick={()=>handlePageChange(page+1)} disabled={page===Math.max(1, Math.ceil(groupedProducts.length / pageSize))-1} variant="outlined" sx={{borderRadius:6, minWidth:80}} style={{color:'#222'}}>Sau</Button>
-          </div>
           {/* Modal sửa sản phẩm */}
           <Dialog open={!!editDetail} onClose={()=>setEditDetail(null)} maxWidth="sm" fullWidth>
             <DialogTitle>Sửa chi tiết sản phẩm</DialogTitle>
@@ -1769,7 +1414,6 @@ export default function ProductDetailTable() {
                         <MenuItem value="">---</MenuItem>
                         <MenuItem value="Đang bán">Đang bán</MenuItem>
                         <MenuItem value="Ngừng bán">Ngừng bán</MenuItem>
-                        <MenuItem value="Hết hàng">Hết hàng</MenuItem>
                       </Select>
                     </FormControl>
                     <TextField label="Mô tả" value={editForm.moTa} onChange={e=>setEditForm((f:any)=>({...f, moTa:e.target.value}))} fullWidth sx={{mb:2}} multiline minRows={2} />
@@ -1783,7 +1427,11 @@ export default function ProductDetailTable() {
                       ) : (
                           editForm?.duongDanHinhAnh && (
                               <img
-                                  src={`http://localhost:8080/images/${editForm.duongDanHinhAnh.replace(/^.*[\\/]/, '')}`}
+                                  src={editForm.duongDanHinhAnh.startsWith('/images/')
+                                      ? `http://localhost:8080${editForm.duongDanHinhAnh}`
+                                      : editForm.duongDanHinhAnh.startsWith('http')
+                                        ? editForm.duongDanHinhAnh
+                                        : `http://localhost:8080/hinh-anh/view/${editForm.duongDanHinhAnh.replace(/^.*[\\/]/, '')}`}
                                   alt="Ảnh hiện tại"
                                   style={{width:60, height:60, objectFit:'contain', borderRadius:6, border:'1px solid #eee', background:'#fafafa', marginTop:8, marginRight:8}}
                               />
@@ -1795,11 +1443,11 @@ export default function ProductDetailTable() {
             </DialogContent>
             <DialogActions>
               <Button onClick={()=>setEditDetail(null)} disabled={editLoading}>Hủy</Button>
-              <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSaveEdit}
-                  disabled={editLoading}
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleSaveEdit}
+                disabled={editLoading}
               >
                 {editLoading ? 'Đang lưu...' : 'Lưu'}
               </Button>
@@ -1863,103 +1511,15 @@ export default function ProductDetailTable() {
           {addMauSacSuccess && <Alert severity="success" sx={{mb:2}}>{addMauSacSuccess}</Alert>}
           {addKichCoSuccess && <Alert severity="success" sx={{mb:2}}>{addKichCoSuccess}</Alert>}
           <Snackbar
-              open={snackbar.open}
-              autoHideDuration={4000}
-              onClose={handleCloseSnackbar}
-              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            open={snackbar.open}
+            autoHideDuration={4000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
             <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
               {snackbar.message}
             </MuiAlert>
           </Snackbar>
-          {/* Modal sửa biến thể */}
-          <Dialog open={openEditVariantModal} onClose={()=>setOpenEditVariantModal(false)} fullWidth>
-            <DialogTitle>Sửa biến thể</DialogTitle>
-            <DialogContent sx={{ p: 5 }}>
-              {editVariantForm && (
-                  <Box sx={{ width: '100%', mb: 2, p: 2 }}>
-                    <Box sx={{ display: 'flex', gap: 3, minWidth: 0 }}>
-                      <FormControl fullWidth size="small" sx={{ minWidth: 180, flex: 1, width: '100%' }}>
-                        <InputLabel shrink>Màu sắc</InputLabel>
-                        <Select
-                            value={editVariantForm.idMauSac || ''}
-                            label="Màu sắc"
-                            onChange={e => setEditVariantForm((f:any) => ({ ...f, idMauSac: e.target.value }))}
-                        >
-                          <MenuItem value="">---</MenuItem>
-                          {mauSacs.map(ms => (
-                              <MenuItem key={ms.idMauSac} value={String(ms.idMauSac)}>
-                                {ms.mauSac}
-                              </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <TextField
-                          label="Số lượng"
-                          type="number"
-                          value={editVariantForm.soLuong}
-                          onChange={e => {
-                            setEditVariantForm((f:any) => ({ ...f, soLuong: e.target.value }));
-                            setEditVariantSoLuongError('');
-                          }}
-                          fullWidth
-                          size="small"
-                          sx={{ minWidth: 180, flex: 1, width: '100%' }}
-                          error={!!editVariantSoLuongError}
-                          helperText={editVariantSoLuongError}
-                      />
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 3, minWidth: 0, mt: 2 }}>
-                      <FormControl fullWidth size="small" sx={{ minWidth: 180, flex: 1, width: '100%' }}>
-                        <InputLabel shrink>Kích cỡ</InputLabel>
-                        <Select
-                            value={editVariantForm.idKichCo || ''}
-                            label="Kích cỡ"
-                            onChange={e => setEditVariantForm((f:any) => ({ ...f, idKichCo: e.target.value }))}
-                        >
-                          <MenuItem value="">---</MenuItem>
-                          {kichCos.map(kc => (
-                              <MenuItem key={kc.idKichCo} value={String(kc.idKichCo)}>
-                                {kc.kichCo}
-                              </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <TextField
-                          label="Giá"
-                          type="number"
-                          value={editVariantForm.gia}
-                          onChange={e => {
-                            setEditVariantForm((f:any) => ({ ...f, gia: e.target.value }));
-                            setEditVariantGiaError('');
-                          }}
-                          fullWidth
-                          size="small"
-                          sx={{ minWidth: 180, flex: 1, width: '100%' }}
-                          error={!!editVariantGiaError}
-                          helperText={editVariantGiaError}
-                      />
-                    </Box>
-                    <Box sx={{ width: '100%', mt: 2 }}>
-                      <label style={{ fontWeight: 600 }}>
-                        Ảnh chi tiết:<br />
-                        <input type="file" accept="image/*" onChange={handleEditVariantImg} style={{ marginTop: 8 }} />
-                      </label>
-                      {editVariantPreviewImg && (
-                          <img src={editVariantPreviewImg} alt="Preview" style={{ width: 60, height: 60, objectFit: 'contain', borderRadius: 6, border: '1px solid #eee', background: '#fafafa', marginTop: 8 }} />
-                      )}
-                      {!editVariantPreviewImg && editVariantForm.idHinhAnh && (
-                          <img src={`http://localhost:8080/hinh-anh/${editVariantForm.idHinhAnh}`} alt="Ảnh hiện tại" style={{ width: 60, height: 60, objectFit: 'contain', borderRadius: 6, border: '1px solid #eee', background: '#fafafa', marginTop: 8 }} />
-                      )}
-                    </Box>
-                  </Box>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={()=>setOpenEditVariantModal(false)}>Hủy</Button>
-              <Button variant="contained" onClick={handleSaveEditVariant}>Lưu</Button>
-            </DialogActions>
-          </Dialog>
         </div>
       </div>
   );
