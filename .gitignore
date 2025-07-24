@@ -1,32 +1,33 @@
+# Dependencies
 node_modules/
+
+# Build output
 .next/
 out/
+dist/
+
+# Production
+build/
+
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-jspm_packages/
+
+# Environment variables
 .env
+.env.local
 .env.*.local
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# IDE files
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-.npm/
-.eslintcache
-.stylelintcache
-.node_repl_history
-coverage/
-.bfg-report.txt
-*.bak
-*.old
+*.swp
 
-node_modules/
-node_modules/
-.next/
-node_modules/
-node_modules/
+# Misc
+*.log
