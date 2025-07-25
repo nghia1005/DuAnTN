@@ -9,7 +9,7 @@ import VoucherSelector, { Voucher } from "./VoucherSelector";
 import QrSelector from "./QrSelector";
 import PaymentSummary from "./PaymentSummary";
 import InvoicePreview from "./InvoicePreview";
-// XÓA: import html2pdf from 'html2pdf.js';
+
 import AdminLayout from '../../component/Admin-Layout';
 import { ProductDetail } from './types';
 import { ToastContainer } from 'react-toastify';
